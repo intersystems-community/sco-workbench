@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+frontend/dist/
+backend/dist/
+
+# Angular build cache
+.angular/
+
+# Environment & secrets
+.env
+.env.local
+*.env
+
+# SQLite databases
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+data/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# CI
+# Scratch output from `gitlab-ci-local` (ci/test-job-selection.sh); regenerated every run.
+.gitlab-ci-local/
+# npm cache the CI jobs populate via `npm ci --cache .npm`.
+.npm/
+# vitest JSON report the backend-test job emits for the count assertion.
+backend/vitest.json
+# vitest JSON report the frontend-test job emits for the count assertion.
+frontend/vitest.json
+# derived expected-test-file list the test:unit:ci jobs write for the file-set assertion.
+backend/.expected-test-files
+frontend/.expected-test-files
+# vitest JSON reports + derived file lists for the live tiers (test:it:ci / test:e2e:ci).
+# Distinct filenames per tier: they must not clobber backend/vitest.json when the unit
+# tier runs in the same tree.
+backend/vitest-it.json
+backend/vitest-e2e.json
+backend/.expected-it-files
+backend/.expected-e2e-files
+# Same for the real-source tier (test:live:ci).
+backend/vitest-live.json
+backend/.expected-live-files
+# Developer credentials for the real-source tier. Filled from
+# ci/live-source.env.example, which is the only tracked copy. Kept out of .env so a
+# normal `npm run dev` cannot pick up test-source credentials.
+.env.live-source
+# IRIS messages.log the live jobs copy out of the container for the artifact.
+iris-messages.log
+# Static docker client the live jobs unpack (ubi9/nodejs-20 ships none).
+.bin/
+# Tools live-source-test unpacks into the checkout: the AWS CLI (step 7b) and a JDK
+# for javac (step 7c).
+awscli.zip
+awscli/
+.aws-cli/
+.jdk/
+
+# Compiled JDBC test helper — build artifact (Docker + predev recompile it).
+backend/jdbc-helper/*.class

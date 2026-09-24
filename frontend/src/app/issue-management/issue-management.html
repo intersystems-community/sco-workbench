@@ -1,0 +1,228 @@
+<div class="im-shell">
+
+  <!-- ── Left nav ─────────────────────────────────────── -->
+  <nav class="im-nav">
+    <div class="im-nav-header">Issue Categories</div>
+
+    <div class="im-nav-note" *ngIf="countsError()">{{ countsError() }}</div>
+
+    <div class="im-nav-group" *ngFor="let group of navGroups">
+      <button class="im-nav-group-btn" (click)="toggleGroup(group)" [attr.aria-expanded]="group.expanded">
+        <svg class="im-nav-chevron" [class.im-nav-chevron--open]="group.expanded"
+             xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="im-nav-group-label">{{ group.label }}</span>
+      </button>
+
+      <div class="im-nav-group-items" *ngIf="group.expanded">
+        <button class="im-nav-item"
+                *ngFor="let item of group.items"
+                [class.im-nav-item--active]="isActive(item)"
+                (click)="selectCategory(item)">
+          <span class="im-nav-item-label">{{ item.label }}</span>
+          <span class="im-nav-item-count">{{ issueCount(item) ?? '—' }}</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Right content ─────────────────────────────────── -->
+  <div class="im-content">
+
+    <!-- Overview (nothing selected) -->
+    <div class="im-overview" *ngIf="!selectedCategory()">
+      <div class="im-intro-main">
+        <h2 class="im-intro-title">Issue Management</h2>
+
+        <!-- 1. Overview -->
+        <div class="im-intro-section">
+          <div class="im-intro-section-label">Overview</div>
+          <p class="im-intro-text">
+            SCO supports issue detection through KPIs and business processes, as well as importing 
+            issues from external systems. It manages the issue lifecycle by analyzing severity, 
+            urgency, and impact, and provides actionable resolution insights through 
+            client-specific SOPs, scenario analysis, optimization, and AI/ML. SCO can also 
+            automate resolution actions or keep users in the loop when human intervention is needed.
+          </p>
+        </div>
+
+        <hr class="im-rule" />
+
+        <!-- 2. Beyond SCO Workbench -->
+        <div class="im-intro-section">
+          <div class="im-intro-section-label">Beyond SCO Workbench</div>
+          <div class="im-intro-beyond">
+            <p class="im-intro-text">
+              SCO Workbench currently covers viewing issues identified by KPIs. The following issue management 
+              capabilities are not covered:
+            </p>
+            <div class="im-intro-bullet-list">
+              <div class="im-intro-bullet-item">
+                <span class="im-intro-bullet-dot"></span>
+                <span>Build and run business processes to systematically analyze issues</span>
+              </div>
+              <div class="im-intro-bullet-item">
+                <span class="im-intro-bullet-dot"></span>
+                <span>Generate and track additional issues based on business events or the impact of mitigation actions</span>
+              </div>
+              <div class="im-intro-bullet-item">
+                <span class="im-intro-bullet-dot"></span>
+                <span>Run scenario analysis to evaluate potential actions and outcomes for an issue</span>
+              </div>
+              <div class="im-intro-bullet-item">
+                <span class="im-intro-bullet-dot"></span>
+                <span>Execute actions associated with decisions, either automatically or with a human in the loop</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="im-rule" />
+
+        <!-- 3. How to Use -->
+        <div class="im-intro-section">
+          <div class="im-intro-section-label">How to Use</div>
+          <div class="im-intro-step-list">
+            <div class="im-intro-step">
+              <span class="im-intro-step-num">1</span>
+              <div class="im-intro-step-body">
+                <div class="im-intro-step-title">Browse by category</div>
+                <div class="im-intro-step-desc">Click a category in the left panel (By KPI, By Severity, or Work Queue) to filter the issue list. The number beside each category is how many issues it holds.</div>
+              </div>
+            </div>
+            <div class="im-intro-step">
+              <span class="im-intro-step-num">2</span>
+              <div class="im-intro-step-body">
+                <div class="im-intro-step-title">Review issues in the table</div>
+                <div class="im-intro-step-desc">Each row shows the issue description, the record it affects, the triggering KPI, severity, urgency and status. Severity and urgency read "Not set" until SCO assigns them.</div>
+              </div>
+            </div>
+            <div class="im-intro-step">
+              <span class="im-intro-step-num">3</span>
+              <div class="im-intro-step-body">
+                <div class="im-intro-step-title">Open an issue for details</div>
+                <div class="im-intro-step-desc">Click any row to open the issue, including the impacted record, the issue data recorded by the analysis process, and the resolution note once it is closed.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Issue table (category selected, no issue selected) -->
+    <div class="im-table-wrap" *ngIf="selectedCategory() && !selectedIssue()">
+      <div class="im-table-hd">
+        <div class="im-table-hd-left">
+          <div class="im-table-hd-group">{{ categoryGroupLabel }}</div>
+          <h2 class="im-table-hd-title">{{ selectedCategory()!.label }}</h2>
+        </div>
+        <span class="im-table-hd-count">
+          {{ pluralIssues(totalCount()) }}<ng-container *ngIf="truncated()"> — showing the first {{ listCap() }}</ng-container>
+        </span>
+      </div>
+
+      <div class="im-table-note" *ngIf="loadingList()">Loading issues…</div>
+      <div class="im-table-note im-table-note--error" *ngIf="listError()">{{ listError() }}</div>
+      <div class="im-table-note" *ngIf="!loadingList() && !listError() && !issues().length">
+        No issues in this category.
+      </div>
+
+      <div class="im-table-scroll" *ngIf="issues().length">
+        <table class="im-table">
+          <thead>
+            <tr>
+              <th>Issue</th>
+              <th>KPI</th>
+              <th>Severity</th>
+              <th>Urgency</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="im-table-row" *ngFor="let issue of issues()" (click)="selectIssue(issue)">
+              <td class="im-td-issue">
+                <div class="im-td-issue-title">{{ issue.description }}</div>
+                <div class="im-td-issue-desc" *ngIf="issue.impactedObjectId">
+                  {{ issue.impactedObjectType }} {{ issue.impactedObjectId }}
+                </div>
+              </td>
+              <td class="im-td-kpi">{{ issue.kpi ?? '—' }}</td>
+              <td><span class="im-badge im-badge--{{ bandClass(issue.severity) }}">{{ bandLabel(issue.severity) }}</span></td>
+              <td><span class="im-badge im-badge--{{ bandClass(issue.urgency) }}">{{ bandLabel(issue.urgency) }}</span></td>
+              <td><span class="im-status im-status--{{ statusClass(issue.status) }}">{{ issue.status }}</span></td>
+              <td class="im-td-date">{{ issue.created ?? '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Issue detail -->
+    <div class="im-detail" *ngIf="selectedIssue()">
+      <div class="im-detail-main">
+        <button class="im-back-btn" (click)="back()">
+          ← Back to {{ selectedCategory()!.label }}
+        </button>
+
+        <div class="im-detail-hd">
+          <div class="im-detail-id">{{ selectedIssue()!.uid }}</div>
+          <h2 class="im-detail-title">{{ selectedIssue()!.description }}</h2>
+          <div class="im-detail-badges">
+            <span class="im-badge im-badge--{{ bandClass(selectedIssue()!.severity) }}">{{ bandLabel(selectedIssue()!.severity) }} Severity</span>
+            <span class="im-badge im-badge--{{ bandClass(selectedIssue()!.urgency) }}">{{ bandLabel(selectedIssue()!.urgency) }} Urgency</span>
+            <span class="im-status im-status--{{ statusClass(selectedIssue()!.status) }}">{{ selectedIssue()!.status }}</span>
+          </div>
+        </div>
+
+        <div class="im-detail-grid">
+          <div class="im-detail-grid-item" *ngIf="selectedIssue()!.kpi">
+            <div class="im-detail-grid-label">Triggering KPI</div>
+            <div class="im-detail-grid-value">{{ selectedIssue()!.kpi }}</div>
+          </div>
+          <div class="im-detail-grid-item" *ngIf="!selectedIssue()!.kpi && selectedIssue()!.triggerType">
+            <div class="im-detail-grid-label">Triggered By</div>
+            <div class="im-detail-grid-value">{{ selectedIssue()!.triggerType }}</div>
+          </div>
+          <div class="im-detail-grid-item">
+            <div class="im-detail-grid-label">Created</div>
+            <div class="im-detail-grid-value">{{ selectedIssue()!.created ?? '—' }}</div>
+          </div>
+          <div class="im-detail-grid-item" *ngIf="selectedIssue()!.impactedObjectId">
+            <div class="im-detail-grid-label">Impacted {{ selectedIssue()!.impactedObjectType }}</div>
+            <div class="im-detail-grid-value">{{ selectedIssue()!.impactedObjectId }}</div>
+          </div>
+        </div>
+
+        <hr class="im-rule" />
+
+        <div class="im-table-note im-table-note--error" *ngIf="issueError()">{{ issueError() }}</div>
+
+        <div class="im-detail-section" *ngIf="selectedIssue()!.issueData">
+          <div class="im-section-eyebrow">DETAILS</div>
+          <p class="im-detail-text">{{ selectedIssue()!.issueData }}</p>
+        </div>
+
+        <button class="im-next-tile" type="button"
+                *ngIf="!selectedIssue()!.issueData && !loadingIssue()"
+                (click)="openBusinessProcess()">
+          <span class="im-next-tile-title">What now? How can we solve this problem?</span>
+          <span class="im-next-tile-text">
+            Analysis and resolution steps for an issue are driven by a business process.
+          </span>
+          <span class="im-next-tile-cta">Go to Business Process →</span>
+        </button>
+
+        <div class="im-detail-section" *ngIf="selectedIssue()!.resolutionNote">
+          <div class="im-section-eyebrow">RESOLUTION</div>
+          <p class="im-detail-text">{{ selectedIssue()!.resolutionNote }}</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

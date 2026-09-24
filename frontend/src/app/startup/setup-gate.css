@@ -1,0 +1,195 @@
+/* The blocking setup screen. Deliberately plain and self-contained: it renders when
+   the app could not reach its backing instance, so it must not depend on anything
+   the Workbench shell provides. */
+.gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  box-sizing: border-box;
+  background: #f5f5f7;
+  font-family: SF Pro Text, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--db-text, #1d1d1f);
+}
+
+.gate-card {
+  width: 100%;
+  max-width: 640px;
+  background: #ffffff;
+  border: 1px solid #e0e0e6;
+  border-radius: 14px;
+  padding: 26px 30px 22px;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+}
+
+.gate-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.gate-brand { font-size: 13px; font-weight: 700; letter-spacing: -0.2px; color: #6b6b70; }
+
+/* Names the failed prerequisite: the user's first orientation before any prose. */
+.gate-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #a33;
+  background: #fdeceb;
+  border: 1px solid #f6c9c5;
+  border-radius: 20px;
+  padding: 2px 10px;
+}
+
+.gate-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0 0 8px;
+}
+
+.gate-explanation {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #3a3a3c;
+  margin: 0 0 18px;
+}
+
+/* ── The three prerequisites ─────────────────────────────────── */
+.gate-checks {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  border: 1px solid #ececf0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.gate-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #f2f2f5;
+}
+.gate-check:last-child { border-bottom: none; }
+
+.gate-check__mark {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #c6c6cc;
+}
+.gate-check--pass .gate-check__mark { background: #2e7d32; }
+.gate-check--fail .gate-check__mark { background: var(--db-danger, #cc3300); }
+
+.gate-check__label { flex: 1; min-width: 0; }
+.gate-check--unknown .gate-check__label { color: #8a8a8f; }
+
+.gate-check__note { font-size: 11.5px; color: #8a8a8f; flex-shrink: 0; }
+.gate-check--fail .gate-check__note { color: var(--db-danger, #cc3300); font-weight: 600; }
+
+/* ── Steps ───────────────────────────────────────────────────── */
+.gate-steps-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--db-accent, #0066cc);
+  margin: 0 0 8px;
+}
+
+.gate-steps {
+  margin: 0 0 18px;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #3a3a3c;
+}
+.gate-steps li { margin-bottom: 5px; }
+
+/* ── Technical detail (collapsed) ────────────────────────────── */
+.gate-detail {
+  font-size: 12px;
+  border-top: 1px solid #f0f0f4;
+  padding-top: 12px;
+  margin-bottom: 4px;
+}
+
+.gate-detail summary {
+  cursor: pointer;
+  color: #6b6b70;
+  font-weight: 500;
+}
+
+.gate-detail__list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 10px 0 0;
+}
+.gate-detail__list dt { color: #8a8a8f; }
+.gate-detail__list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+.mono {
+  font-family: var(--mono-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11.5px;
+  color: #3a3a3c;
+}
+
+/* ── Actions ─────────────────────────────────────────────────── */
+.gate-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #f0f0f4;
+  padding-top: 16px;
+  margin-top: 14px;
+}
+
+.gate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--db-accent, #0066cc);
+  border: none;
+  border-radius: 7px;
+  padding: 8px 20px;
+  cursor: pointer;
+}
+.gate-btn:hover:not(:disabled) { background: #0055ad; }
+.gate-btn:disabled { background: #9db9d8; cursor: default; }
+.gate-btn:focus-visible { outline: 2px solid #0066cc; outline-offset: 2px; }
+
+.gate-hint { font-size: 12px; color: #8a8a8f; }
+
+.gate-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: gate-spin 0.7s linear infinite;
+}
+@keyframes gate-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-spinner { animation: none; }
+}

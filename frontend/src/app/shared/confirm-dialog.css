@@ -1,0 +1,115 @@
+.cd-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  animation: cd-fade 0.12s ease;
+}
+
+.cd-modal {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 400px;
+  max-width: 90vw;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+  animation: cd-pop 0.14s ease;
+}
+
+.cd-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+.cd-icon svg { width: 22px; height: 22px; }
+/* The icon well says which KIND of decision this is, tiered by what is at stake rather
+   than by alarm. Red is deliberately not used: a modal the user opened on purpose is not
+   an error, and red is this app's colour for things that went wrong.
+   - danger — something is REMOVED or DISCARDED and cannot be brought back. Amber, the
+     universal "irreversible, slow down" cue (and the same pair as the Draft badges).
+   - warn — a plain question that destroys nothing ("Save changes?", "Claude key not
+     provided"). Calm blue; there is nothing here to be careful about.
+   Colour is never the only signal: `danger` also carries the trash glyph, and the
+   message says in words what will happen. */
+.cd-icon--danger { background: #fff8e1; color: #b45e00; }
+.cd-icon--warn { background: #e8f0fb; color: #0066cc; }
+
+.cd-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 6px;
+}
+
+.cd-message {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #555;
+  margin: 0 0 20px;
+  /* Honour newlines in the message so a caller can list several items one per line
+     (e.g. Data Integration's "which steps are unfinished" warning). Single-line
+     messages are unaffected — nothing else collapses. */
+  white-space: pre-line;
+}
+
+.cd-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.cd-btn {
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 20px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  min-width: 96px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cd-btn--ghost {
+  color: #555;
+  background: #fff;
+  border-color: #d0d0d0;
+}
+.cd-btn--ghost:hover { background: #f0f0f0; }
+
+/* The confirm action is OUTLINED in both variants — the same shape as the Save / Submit
+   / Compile / Build buttons, so confirming looks like the ordinary action it is rather
+   than an alarm. Only the colour differs: a destructive confirm is red, and its hover is
+   a translucent red wash rather than a solid fill. */
+.cd-btn--primary {
+  color: #0066cc;
+  background: #ffffff;
+  border-color: #0066cc;
+}
+.cd-btn--primary:hover { background: #eef5fd; }
+
+/* A destructive confirm is outlined in the same amber as its icon, with a translucent
+   amber wash on hover — enough to make the hand pause, without claiming a failure. */
+.cd-btn--danger {
+  color: #b45e00;
+  background: #ffffff;
+  border-color: #b45e00;
+}
+.cd-btn--danger:hover { background: rgba(180, 94, 0, 0.08); }
+
+@keyframes cd-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cd-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}

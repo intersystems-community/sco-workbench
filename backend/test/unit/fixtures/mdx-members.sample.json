@@ -1,0 +1,13 @@
+{
+  "Info": { "Error": "" },
+  "Result": {
+    "Axes": [
+      { "%ID": "Axis_1", "Tuples": [
+        { "Members": [{ "Name": "West" }] },
+        { "Members": [{ "Name": "East" }] },
+        { "Members": [{ "Name": "North" }] }
+      ] }
+    ],
+    "CellData": []
+  }
+}

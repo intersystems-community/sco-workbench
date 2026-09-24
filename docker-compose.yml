@@ -1,0 +1,46 @@
+# SCO Workbench MVP AI agent — single image, connects to the user's IRIS.
+# Copy .env.example to .env and fill in credentials before `docker compose up`.
+services:
+  workbench:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sco-workbench:mvp
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    # `SCO_HOST=localhost` in .env is correct for a dev server on the host, but
+    # inside the container localhost is the container, so SCO is unreachable and
+    # every call fails with "fetch failed". Rewrite the loopback names to the host
+    # gateway; any other value (a remote SCO) is passed through untouched.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        case "$${SCO_HOST}" in
+          localhost|127.0.0.1|0.0.0.0|::1) SCO_HOST=host.docker.internal; export SCO_HOST ;;
+        esac
+        exec "$$@"
+      - --
+    # Overriding entrypoint clears the image's CMD, so repeat it here. Keep in
+    # step with the CMD in Dockerfile.
+    command: ["node", "dist/index.js"]
+    environment:
+      # Inside the container, reach the IRIS running on the host machine.
+      # Override in .env if IRIS runs elsewhere.
+      SCO_HOST: ${SCO_HOST:-host.docker.internal}
+      SQLITE_PATH: /data/workbench.sqlite
+      PORT: "3000"
+      # Bind all interfaces INSIDE the container so the published port reaches the
+      # process. Off-host exposure is gated by the API token on this hop; do not
+      # move this to .env (a user editing it could strand the container on loopback).
+      BIND_HOST: "0.0.0.0"
+      JDBC_LIB_DIR: /app/backend/jdbc-lib
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - workbench-data:/data
+    restart: unless-stopped
+volumes:
+  workbench-data:

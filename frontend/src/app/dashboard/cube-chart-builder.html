@@ -1,0 +1,174 @@
+<section class="ccb">
+  <div class="ccb__controls">
+    <div class="ccb__section">
+      <!-- The section title IS the control's label (SC-2665 label-collapse): the picker's accessible
+           name comes from aria-labelledby → the title word, so no visible label is repeated above the
+           select. title= still glosses the OLAP term for a first-time (kiosk) user (audit #8). -->
+      <div class="ccb__section-title"><span id="ccb-cube-label" title="A pre-built data model you can chart from (an SCO analytics cube).">Cube</span>
+        <span class="ccb__section-hint" id="ccb-cube-hint">The data model this chart reads from.</span></div>
+      <div class="ccb__field">
+        <select class="ccb__control" data-testid="cube-select"
+                aria-labelledby="ccb-cube-label" aria-describedby="ccb-cube-hint"
+                (change)="onCubeChange($any($event.target).value)">
+          <option value="" disabled [selected]="cube() === null">Select a cube…</option>
+          @for (c of chartableCubes(); track c.cubeName) {
+            <option [value]="c.cubeName" [selected]="c.cubeName === cube()">{{ humanizeCubeName(c.cubeName) }}</option>
+          }
+          @for (c of nonChartableCubes(); track c.cubeName) {
+            <option [value]="c.cubeName" disabled>{{ disabledCubeLabel(c) }}</option>
+          }
+        </select>
+      </div>
+      @if (loadingCubes()) {
+        <span class="ccb__note" data-testid="cube-loading" role="status">Loading cubes…</span>
+      }
+    </div>
+
+    @if (shape() && !unchartable()) {
+      <div class="ccb__section">
+        <!-- Section title IS the label; the gloss rides the title word (audit #8). The add-measure
+             select keeps its own aria-label (it is one control among removable chips). -->
+        <div class="ccb__section-title"><span id="ccb-measures-label" title="The numbers being charted — what each bar or point measures.">Measures</span>
+          <span class="ccb__section-hint">The numbers being charted.</span></div>
+        <div class="ccb__field">
+          <div class="ccb__chips">
+            @for (m of measures(); track m) {
+              <span class="ccb__chip">{{ humanizeField(m) }}
+                <button type="button" (click)="removeMeasure(m)" [attr.aria-label]="'Remove measure ' + humanizeField(m)">✕</button></span>
+            }
+            <select class="ccb__control" data-testid="add-measure" aria-label="Add a measure"
+                    [disabled]="addMeasureBlocked()" [attr.aria-describedby]="addMeasureBlocked() ? 'ccb-add-measure-blocked' : null"
+                    (change)="addMeasure($any($event.target).value); $any($event.target).value=''">
+              <option value="" selected>+ add measure…</option>
+              @for (m of availableMeasures(); track m.name) { <option [value]="m.name">{{ m.caption || humanizeField(m.name) }}</option> }
+            </select>
+            @if (addMeasureBlocked()) { <span id="ccb-add-measure-blocked" class="ccb__note" data-testid="add-measure-blocked-note">Remove the colour split to add a second measure.</span> }
+          </div>
+        </div>
+      </div>
+
+      @if (isBubble()) {
+        <div class="ccb__section">
+          <!-- Promoted to a titled section (SC-2665) so it reads like every other picker: title is
+               the label, select named via aria-labelledby. -->
+          <div class="ccb__section-title"><span id="ccb-size-label">Size</span>
+            <span class="ccb__section-hint" id="ccb-size-hint">Which measure sets each bubble's size.</span></div>
+          <div class="ccb__field">
+            <select class="ccb__control" data-testid="bubble-size" [value]="sizeMeasure()"
+                    aria-labelledby="ccb-size-label" aria-describedby="ccb-size-hint"
+                    (change)="onSizeMeasureChange($any($event.target).value)">
+              <option value="%COUNT">Count</option>
+              @for (m of measureOptions(); track m) { <option [value]="m">{{ humanizeField(m) }}</option> }
+            </select>
+          </div>
+        </div>
+      }
+
+      <div class="ccb__section">
+        <div class="ccb__section-title"><span id="ccb-category-label">Category axis</span>
+          <span class="ccb__section-hint" id="ccb-category-hint">What each bar or point represents.</span></div>
+        <div class="ccb__field">
+          <select class="ccb__control" data-testid="dimension-select"
+                  aria-labelledby="ccb-category-label" aria-describedby="ccb-category-hint"
+                  (change)="onCategoryChange($any($event.target).value)">
+            <option value="" [selected]="categoryLevel() === null">(none)</option>
+            @for (g of categoryGroups(); track g.dimension) {
+              <optgroup [label]="g.label">
+                @for (l of g.levels; track l.spec) { <option [value]="l.spec" [selected]="l.spec === categoryLevel()">{{ l.label }}</option> }
+              </optgroup>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="ccb__section">
+        <div class="ccb__section-title"><span id="ccb-series-label">Series (colour split)</span>
+          <span class="ccb__section-hint" id="ccb-series-hint">Break the chart down by a second dimension.</span></div>
+        <div class="ccb__field">
+          <!-- title= gives the second-dimension scent Karsten's own "can I pick a second dimension?" flagged (audit #6).
+               aria-describedby carries the blocked note when disabled, else the section hint. -->
+          <select class="ccb__control" data-testid="series-dim-select"
+                  aria-labelledby="ccb-series-label"
+                  title="Break the chart down by a second dimension, drawn as separate coloured series."
+                  [disabled]="seriesBlocked()" [attr.aria-describedby]="seriesBlocked() ? 'ccb-series-blocked' : 'ccb-series-hint'"
+                  (change)="onSeriesChange($any($event.target).value)">
+            <option value="" [selected]="seriesLevel() === null">(none)</option>
+            @for (g of seriesGroups(); track g.dimension) {
+              <optgroup [label]="g.label">
+                @for (l of g.levels; track l.spec) { <option [value]="l.spec" [selected]="l.spec === seriesLevel()">{{ l.label }}</option> }
+              </optgroup>
+            }
+          </select>
+          @if (seriesBlocked()) { <span id="ccb-series-blocked" class="ccb__note" data-testid="series-blocked-note">A colour split isn't available with multiple measures yet.</span> }
+        </div>
+      </div>
+
+      <div class="ccb__section">
+        <!-- Section title IS the group label; the add-filter draft's own selects carry their own
+             aria-labels (Filter field / Filter value), so no repeated "Filters" label here. -->
+        <div class="ccb__section-title"><span id="ccb-filters-label">Filters</span>
+          <span class="ccb__section-hint">Narrow the records this chart counts.</span></div>
+        <div class="ccb__field">
+          <div class="ccb__chips">
+            @for (f of filters(); track f.name) {
+              <span class="ccb__chip">{{ humanizeField(f.name) }} = {{ f.member }}
+                <button type="button" (click)="removeFilter(f.name)" [attr.aria-label]="'Remove filter ' + humanizeField(f.name)">✕</button></span>
+            }
+          </div>
+          <!-- Add-filter chip (spec §6.1): level picker → member combobox → {name,level,member} into filters(). -->
+          @if (draftFilterOpen()) {
+            <div class="ccb__draft-filter">
+              <select class="ccb__control" data-testid="filter-level-select" aria-label="Filter field"
+                      (change)="onDraftFilterLevel($any($event.target).value)">
+                <option value="" selected disabled>Choose a field…</option>
+                @for (g of filterGroups(); track g.dimension) {
+                  <optgroup [label]="g.label">
+                    @for (l of g.levels; track l.spec) { <option [value]="l.spec">{{ l.label }}</option> }
+                  </optgroup>
+                }
+              </select>
+              @if (draftFilterLevel()) {
+                <input class="ccb__control" data-testid="filter-member-input" list="ccb-filter-members"
+                       aria-label="Filter value" placeholder="Select or type a value"
+                       (change)="commitFilter($any($event.target).value)" />
+                <datalist id="ccb-filter-members">
+                  @for (m of draftMemberOptions(); track m.name) { <option [value]="m.name">{{ m.caption || m.name }}</option> }
+                </datalist>
+              }
+            </div>
+          } @else {
+            <button type="button" class="ccb__add-row-btn" data-testid="add-filter"
+                    [disabled]="filterGroups().length === 0" (click)="openDraftFilter()">+ Add filter</button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- One status per state (audit #1): the message never stands in for a different state. -->
+  @switch (status()) {
+    @case ('ready') {
+      <app-chart-builder-preview
+        [baseSelection]="baseSelection()" [allowedTypes]="allowedTypes"
+        [seedType]="seedType()" [seedUseAi]="seedUseAi()"
+        (draftChange)="onDraftChange($event)" />
+    }
+    @case ('idle') {
+      <p class="ccb__empty" data-testid="ccb-idle">Pick a cube to chart its data.</p>
+    }
+    @case ('loading') {
+      <p class="ccb__empty" data-testid="ccb-loading" role="status">Loading the cube…</p>
+    }
+    @case ('error') {
+      <p class="ccb__empty ccb__empty--error" data-testid="ccb-error" role="alert">
+        Couldn't load this cube. <button type="button" (click)="retryShape()">Retry</button>
+      </p>
+    }
+    @case ('unchartable') {
+      <p class="ccb__empty" data-testid="ccb-unchartable">This cube has no measures and dimensions to chart. Pick another cube.</p>
+    }
+    @case ('needs-measure') {
+      <p class="ccb__empty" data-testid="ccb-needs-measure">Add a measure to chart this cube.</p>
+    }
+  }
+</section>

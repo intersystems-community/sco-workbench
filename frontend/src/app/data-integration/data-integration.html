@@ -1,0 +1,965 @@
+<div class="di-page page--full" [class.di-page--list-collapsed]="listCollapsed">
+
+  <!-- ── Left: jobs list ──────────────────────────────────────── -->
+  <!-- Collapsed: no column at all — a thin hover strip on the left edge reveals a
+       floating expand arrow, so the detail/wizard gets the full width. -->
+  <div class="list-hover-zone" *ngIf="listCollapsed">
+    <button class="list-expand-btn" (click)="toggleList()" title="Show integration list" aria-label="Show integration list">›</button>
+  </div>
+
+  <div class="di-list-panel" *ngIf="!listCollapsed">
+    <div class="panel-header">
+      <button class="list-collapse-btn" (click)="toggleList()" title="Hide integration list" aria-label="Hide integration list">‹</button>
+      Data Integration
+      <span class="count" *ngIf="jobs.length > 0">({{ jobs.length }})</span>
+      <!-- Geometric "+" rather than the text glyph: a "+" character sits a shade
+           below the centre of its line box, which reads as a misaligned icon in a
+           22px square. The SVG is centred by construction. -->
+      <button class="add-btn" [axGuide]="'new-integration'" (click)="attemptNewWizard()" title="Create new integration" aria-label="Create new integration">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>
+      </button>
+    </div>
+    <div class="di-jobs-list">
+      <!-- One line per pipeline — the name plus its lifecycle chip — matching the
+           Cube and KPI list rows. The source (an FTP host or a poll directory) is
+           long and would force a second line, so it rides in the row's tooltip
+           instead, exactly as the cube rows carry their display name.
+           That tooltip opens UPWARD (the default), so it doesn't cover the row
+           underneath and read as that row's name. The very first row is the one
+           exception: above it is the scroll container's top edge, which would clip an
+           upward bubble, so that one still opens downward. -->
+      <div
+        *ngFor="let job of jobs; let first = first"
+        class="job-item"
+        [class.job-item--active]="isRowActive(job)"
+        [attr.data-tooltip]="rowTooltip(job)"
+        [attr.data-tooltip-pos]="first ? 'below' : null"
+        data-tooltip-align="start"
+        (click)="selectJob(job)"
+      >
+        <div class="job-item-name">{{ job.name }}</div>
+        <!-- Lifecycle chip. Hidden while a deploy is running: the pending spinner
+             that replaces it already says what is happening, and a "Draft" chip
+             beside it would read as a contradiction of it. -->
+        <span class="di-status-tag" [ngClass]="statusTagClass(job)" *ngIf="!isPending(job.id)">{{ statusLabel(job) }}</span>
+        <!-- No Delete here: it lives in the detail header, where the pipeline being
+             deleted is the one on screen. Keeping the row free of trailing controls is
+             also what lets the status chip sit flush right, as in the Cube/KPI lists. -->
+        <!-- Just the wheel — no chip box. The row's badge carries no text, so a
+             tinted chip around a lone spinner only read as an empty grey box beside
+             it. (The detail header's badge keeps its chip: it says "working…".) -->
+        <span class="di-spinner job-row-spinner" *ngIf="isPending(job.id)" role="status"
+              title="An assistant step is in progress" aria-label="An assistant step is in progress"></span>
+      </div>
+      <div class="di-empty" *ngIf="jobs.length === 0">No integrations yet.</div>
+    </div>
+  </div>
+
+  <!-- ── Right panel ──────────────────────────────────────────── -->
+  <div class="di-main-panel">
+
+    <!-- Feature intro: shown when no integration is selected -->
+    <div class="di-intro" *ngIf="!selectedJob && !wizardOpen">
+
+      <h2 class="di-intro-title">Data Integration</h2>
+
+      <!-- 1. Overview -->
+      <div class="di-intro-section">
+        <div class="di-intro-section-label">Overview</div>
+        <p class="di-intro-text">
+          SCO provides a robust, industry-proven integration engine with out-of-the-box support
+          for a wide range of <a class="di-intro-link" href="https://docs.intersystems.com/supplychain20261/csp/docbook/DocBook.UI.Page.cls?KEY=PAGE_interop_protocols" target="_blank" rel="noopener">integration adapters</a>, as well as the ability to create custom
+          adapters. Its powerful <a class="di-intro-link" href="https://docs.intersystems.com/supplychain20261/csp/docbook/Doc.View.cls?KEY=EDTL_intro" target="_blank" rel="noopener">DTL engine</a> supports complex data mapping and transformation, 
+          while its scalable messaging architecture enables SCO to handle complex integration 
+          requirements using standard capabilities or custom integration solutions.
+        </p>
+      </div>
+
+      <hr class="di-intro-rule" />
+
+      <!-- 2. Beyond SCO Workbench -->
+      <div class="di-intro-section">
+        <div class="di-intro-section-label">Beyond SCO Workbench</div>
+        <div class="di-intro-beyond">
+          <p class="di-intro-text">SCO Workbench only showcase a few common integration configurations. 
+            More advanced scenarios require working directly in SCO:</p>
+          <div class="di-intro-bullet-list">
+            <div class="di-intro-bullet-item">
+              <span class="di-intro-bullet-dot"></span>
+              <span>Other data sources, such as other DBMS, message queues, streaming data, etc.</span>
+            </div>
+            <div class="di-intro-bullet-item">
+              <span class="di-intro-bullet-dot"></span>
+              <span>Complex transformation logic which involves custom logic or rules, or multiple data sources</span>
+            </div>
+            <div class="di-intro-bullet-item">
+              <span class="di-intro-bullet-dot"></span>
+              <span>Scheduling, monitoring, and upgrading deployed integrations</span>
+            </div>
+            <div class="di-intro-bullet-item">
+              <span class="di-intro-bullet-dot"></span>
+              <span>Advanced orchestration, error handling, and retry strategies via the SCO interoperability framework</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="di-intro-rule" />
+
+      <!-- 3. How to use -->
+      <div class="di-intro-section">
+        <div class="di-intro-section-label">How to Use</div>
+        <div class="di-intro-step-list">
+          <div class="di-intro-step">
+            <span class="di-intro-step-num">1</span>
+            <div class="di-intro-step-body">
+              <div class="di-intro-step-title">Create a new integration</div>
+              <div class="di-intro-step-desc">Click <strong>+</strong> in the left panel to open the integration wizard. Follow the wizard steps to configure your source connection and field mappings. Use the AI Assistant at any point if you need guidance on connection settings or how to map your source data to SCO objects.</div>
+            </div>
+          </div>
+          <div class="di-intro-step">
+            <span class="di-intro-step-num">2</span>
+            <div class="di-intro-step-body">
+              <div class="di-intro-step-title">Edit a draft integration</div>
+              <div class="di-intro-step-desc">Select an existing integration from the left panel to reopen the wizard and update its configuration. Use the AI Assistant to help refine mappings or troubleshoot issues with your source data.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="di-intro-tip">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M8 7v4M8 5.5v.5"/>
+        </svg>
+        <span>Not sure how to structure your integration? Ask the AI Assistant — describe your source system and target data, and it can suggest an approach.</span>
+      </div>
+
+    </div>
+
+    <!-- ── Job detail view ───────────────────────────────────── -->
+    <div class="di-detail" *ngIf="selectedJob && !wizardOpen">
+      <div class="detail-header">
+        <div class="detail-header-left">
+          <!-- No status chip here: the list row for this same pipeline is on screen
+               beside it, already showing the chip, so repeating it in the header only
+               duplicates it. -->
+          <div class="detail-name-row">
+            <h2 class="detail-name">{{ selectedJob.name }}</h2>
+          </div>
+          <div class="detail-meta">{{ SOURCE_TYPE_LABELS[selectedJob.sourceType] }} · {{ selectedJob.sourceName }}</div>
+        </div>
+        <div class="detail-actions">
+          <!-- While an agent step is in flight, show a working badge; the real
+               status arrives via ui_report_status (no optimistic change). -->
+          <span class="job-pending-tag tag-lg" *ngIf="isPending(selectedJob.id)">
+            <span class="di-spinner" aria-hidden="true"></span> working…
+          </span>
+          <!-- Edit / Delete match the KPI + Cube icon-button style; tooltips render
+               below so they can't overflow the top of the panel. -->
+          <button class="icon-btn" [axGuide]="'edit-integration'" (click)="attemptEditJob(selectedJob)"
+                  [disabled]="isPending(selectedJob.id)" data-tooltip-pos="below"
+                  data-tooltip="Edit integration" aria-label="Edit integration">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </button>
+          <!-- A deployed pipeline can't be deleted (its IRIS classes/hosts are live). -->
+          <button class="icon-btn icon-btn--danger" *ngIf="canDeleteIntegration(selectedJob)" (click)="requestDeleteIntegration(selectedJob, $event)"
+                  [disabled]="isPending(selectedJob.id)" data-tooltip-pos="below"
+                  data-tooltip="Delete integration" aria-label="Delete integration">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+          <!-- Deploy: one automatic action — the agent generates + compiles the
+               classes, registers the hosts, and starts the pipeline. (The uploaded
+               file is transferred into IRIS earlier, at Save.)
+               Reads "Redeploy" for a pipeline already deployed: the same button, but
+               the run updates classes that already exist rather than creating them,
+               and "Deploy" on an already-deployed pipeline reads like a no-op. -->
+          <button class="deploy-btn" [axGuide]="'deploy-button'" (click)="deployIntegration(selectedJob)"
+                  [disabled]="anyDeployPending()" data-tooltip-pos="below" data-tooltip-align="end"
+                  [attr.data-tooltip]="anyDeployPending() && !isPending(selectedJob.id)
+                    ? 'A deploy is already running — wait for it to finish'
+                    : deployTooltip(selectedJob)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            {{ deployLabel(selectedJob) }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Connection details (Step 1) -->
+      <div class="detail-card">
+        <div class="card-title">
+          Connection Details
+          <!-- Only surface the positive "tested" state; an untested connection shows
+               no badge (the "Not tested" chip was noise on every fresh pipeline). -->
+          <span class="conn-tested-badge conn-tested-badge--ok" *ngIf="selectedJob.connectionTested">
+            ✓ Tested
+          </span>
+        </div>
+        <dl class="summary-list">
+          <ng-container *ngFor="let d of connectionDetails(selectedJob)">
+            <dt>{{ d.label }}</dt>
+            <dd class="mono">{{ d.value }}</dd>
+          </ng-container>
+        </dl>
+      </div>
+
+      <!-- Data source / data entity (Step 2 selection) -->
+      <div class="detail-card" *ngIf="selectedJob.dataEntity">
+        <div class="card-title">Data Source</div>
+        <dl class="summary-list">
+          <dt>{{ selectedJob.dataEntity.nameLabel }}</dt>
+          <dd class="mono">{{ selectedJob.dataEntity.name }}</dd>
+          <dt>{{ selectedJob.dataEntity.sourceLabel }}</dt>
+          <dd class="mono">{{ selectedJob.dataEntity.source }}</dd>
+          <dt>Header Row</dt>
+          <dd>{{ selectedJob.hasHeader ? 'Yes' : 'No' }}</dd>
+        </dl>
+      </div>
+
+      <!-- Target class -->
+      <div class="detail-card">
+        <div class="card-title">Target Class</div>
+        <div class="target-chips">
+          <span class="target-chip">{{ selectedJob.targetClass || '—' }}</span>
+        </div>
+      </div>
+
+      <!-- Mappings -->
+      <div class="detail-card">
+        <div class="card-title">Field Mappings ({{ selectedJob.columns.length }})</div>
+        <div class="mapping-table-scroll">
+          <table class="mapping-table">
+            <thead>
+              <tr>
+                <th>Source Field</th><th>Type</th><th>Transform</th><th>Target Property</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of selectedJob.columns" [class.row-unmapped]="!c.targetProperty">
+                <td class="mono">{{ c.name }}</td>
+                <td class="type-badge">{{ c.type }}</td>
+                <td class="mono small">{{ c.transform || '—' }}</td>
+                <td class="mono">{{ c.targetProperty || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Wizard ────────────────────────────────────────────── -->
+    <div class="di-wizard" *ngIf="wizardOpen">
+
+      <!-- Step indicator -->
+      <div class="step-bar">
+
+        <div class="step-item" [class.step-item--active]="currentStep === 1" [class.step-item--done]="currentStep > 1" (click)="currentStep = 1">
+          <div class="step-circle">1</div><span class="step-label">Data Source</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item" [class.step-item--active]="currentStep === 2" [class.step-item--done]="currentStep > 2" (click)="currentStep > 1 && goDataStep()">
+          <div class="step-circle">2</div><span class="step-label">Data Entity</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item" [class.step-item--active]="currentStep === 3" (click)="currentStep > 1 && goMappingStep()">
+          <div class="step-circle">3</div><span class="step-label">Mapping</span>
+        </div>
+        <div class="step-spacer"></div>
+      </div>
+
+      <!-- Wizard content + chat side by side -->
+      <div class="wizard-content-row">
+      <div class="wizard-steps-col">
+
+      <!-- ── Step 1: Data Source ─────────────────────────────── -->
+      <div class="wizard-body" *ngIf="currentStep === 1">
+        <div class="wizard-section">
+          <div class="wizard-section-title">Integration Name<span class="req">*</span></div>
+          <input class="form-input form-input--wide" [axGuide]="'name'" [(ngModel)]="jobName" placeholder="e.g. ERP Orders → SalesOrder" />
+        </div>
+
+        <div class="wizard-section">
+          <div class="wizard-section-title">Source Type</div>
+          <div class="source-type-grid">
+            <!-- The guide id rides on the SELECTED card, not the grid: highlighting
+                 "sourceType" should ring the one card in question, not outline the whole
+                 row of choices. An empty id never activates (see GuideHighlightDirective),
+                 so the unselected cards stay quiet. -->
+            <ng-container *ngFor="let t of SOURCE_TYPES">
+            <div
+              class="source-type-card"
+              [axGuide]="sourceType === t ? 'sourceType' : ''"
+              [class.source-type-card--active]="sourceType === t"
+              [class.source-type-card--disabled]="isSourceDisabled(t)"
+              (click)="!isSourceDisabled(t) && (sourceType = t); !isSourceDisabled(t) && onSourceTypeChange()"
+            >
+              <span class="source-type-icon">{{ sourceTypeIcon(t) }}</span>
+              <span class="source-type-label">{{ SOURCE_TYPE_LABELS[t] }}</span>
+              <span class="source-type-note" *ngIf="t === 'database'">JDBC</span>
+              <span class="source-type-note" *ngIf="t === 'cloud'">(AWS-S3-Only)</span>
+              <span class="source-type-unsupported" *ngIf="isSourceDisabled(t)">Not supported yet</span>
+            </div>
+            <!-- NOT a source type: a way out of the wizard to the Getting Started page
+                 that loads a ready-made SC_Data set. It sits beside Local File because
+                 that is the other "the data is already in a file" answer, and it is the
+                 one that needs no connection at all. Rendered inside the loop only so it
+                 lands next to that card; it never becomes `sourceType`, so it carries no
+                 active state and nothing downstream has to know about it. -->
+            <div
+              *ngIf="t === 'file'"
+              class="source-type-card"
+              (click)="openLoadSampleData()"
+            >
+              <span class="source-type-icon">📦</span>
+              <span class="source-type-label">Load sample data</span>
+              <!-- The arrow is what separates this note from the others: the rest of the
+                   row describes the tile it sits under ("JDBC", "AWS-S3-Only"), this one
+                   says the click goes somewhere else. Short enough to fit the 100px card
+                   on one line, and the arrow is tied on with a non-breaking space so it
+                   can never be left stranded on a line of its own. -->
+              <span class="source-type-note">Get Started&nbsp;→</span>
+            </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Database config → IRIS SQL inbound service (JDBC) -->
+        <div class="wizard-section" *ngIf="sourceType === 'database'">
+          <div class="wizard-section-title">Connection Details</div>
+          <div class="config-grid">
+            <label class="form-label">Data Source Name<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'dbDataSourceName'" [(ngModel)]="sourceConfig.dbDataSourceName" placeholder="name for the data source" />
+            <label class="form-label">Database Type<span class="req">*</span></label>
+            <select class="form-input form-select" [axGuide]="'dbType'" [(ngModel)]="sourceConfig.dbType">
+              <option value="" disabled hidden>Select a database type…</option>
+              <option *ngFor="let t of DB_TYPES" [value]="t">{{ t }}</option>
+            </select>
+            <label class="form-label">DSN (JDBC URL)<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'dbDsn'" [(ngModel)]="sourceConfig.dbDsn" placeholder="jdbc:IRIS://host:1972/NAMESPACE" />
+            <label class="form-label">Username<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'dbUsername'" [(ngModel)]="sourceConfig.dbUsername" placeholder="database username" />
+            <label class="form-label">Password<span class="req">*</span></label>
+            <input class="form-input" type="password" [axGuide]="'dbPassword'" [(ngModel)]="sourceConfig.dbPassword" placeholder="••••••" />
+          </div>
+        </div>
+
+        <!-- REST API config -->
+        <div class="wizard-section" *ngIf="sourceType === 'rest-api'">
+          <div class="wizard-section-title">API Details</div>
+          <div class="config-grid">
+            <label class="form-label">Base URL</label>
+            <input class="form-input" [(ngModel)]="sourceConfig.apiUrl" placeholder="https://api.example.com/v1" />
+            <label class="form-label">Auth Method</label>
+            <select class="form-input form-select" [(ngModel)]="sourceConfig.apiAuth">
+              <option *ngFor="let a of API_AUTHS" [value]="a">{{ a }}</option>
+            </select>
+            <ng-container *ngIf="sourceConfig.apiAuth === 'API Key'">
+              <label class="form-label">API Key</label>
+              <input class="form-input" [(ngModel)]="sourceConfig.apiKey" placeholder="your-api-key" />
+            </ng-container>
+            <ng-container *ngIf="sourceConfig.apiAuth === 'Bearer Token'">
+              <label class="form-label">Token</label>
+              <input class="form-input" [(ngModel)]="sourceConfig.apiBearer" placeholder="Bearer token" />
+            </ng-container>
+            <ng-container *ngIf="sourceConfig.apiAuth === 'Basic Auth'">
+              <label class="form-label">Username</label>
+              <input class="form-input" [(ngModel)]="sourceConfig.apiUser" placeholder="username" />
+              <label class="form-label">Password</label>
+              <input class="form-input" type="password" [(ngModel)]="sourceConfig.apiPassword" placeholder="••••••" />
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- FTP/SFTP config → EnsLib.FTP.InboundAdapter -->
+        <div class="wizard-section" *ngIf="sourceType === 'ftp'">
+          <div class="wizard-section-title">{{ sourceConfig.ftpSftp ? 'SFTP' : 'FTP' }} Details</div>
+          <div class="config-grid">
+            <label class="form-label">Data Source Name<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'ftpDataSourceName'" [(ngModel)]="sourceConfig.ftpDataSourceName" placeholder="a name for this data source" />
+            <label class="form-label">Protocol</label>
+            <div class="radio-row radio-row--inline" [axGuide]="'ftpSftp'">
+              <label class="radio-label">
+                <input type="radio" name="ftpProtocol" value="FTP" [ngModel]="sourceConfig.ftpSftp ? 'SFTP' : 'FTP'" (ngModelChange)="onProtocolChange($event)" />
+                <span>FTP</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="ftpProtocol" value="SFTP" [ngModel]="sourceConfig.ftpSftp ? 'SFTP' : 'FTP'" (ngModelChange)="onProtocolChange($event)" />
+                <span>SFTP</span>
+              </label>
+            </div>
+            <label class="form-label">Host<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'ftpHost'" [(ngModel)]="sourceConfig.ftpHost" placeholder="ftp.example.com" />
+            <label class="form-label">Port</label>
+            <input class="form-input" [axGuide]="'ftpPort'" [(ngModel)]="sourceConfig.ftpPort" [placeholder]="sourceConfig.ftpSftp ? 'Default port is 22' : 'Default port is 21'" />
+            <label class="form-label">Username<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'ftpUsername'" [(ngModel)]="sourceConfig.ftpUsername" placeholder="server username" />
+            <label class="form-label">Password</label>
+            <!-- SFTP authenticates with the uploaded private key, not a password;
+                 disable the field so it can't be entered when SFTP is selected. -->
+            <input class="form-input" type="password" [axGuide]="'ftpPassword'" [(ngModel)]="sourceConfig.ftpPassword"
+                   [disabled]="!!sourceConfig.ftpSftp"
+                   [placeholder]="sourceConfig.ftpSftp ? 'Not used for SFTP (uses key file)' : '••••••'" />
+            <ng-container *ngIf="sourceConfig.ftpSftp">
+              <label class="form-label">SFTP Public Key File<span class="req">*</span></label>
+              <div class="key-file-field">
+                <input #pubKeyInput type="file" class="key-file-input" (change)="onKeyFileSelected('public', $event)" />
+                <button class="btn-secondary key-file-btn" [axGuide]="'sftpPublicKeyFile'" (click)="pubKeyInput.click()" [disabled]="uploadingKeyFile.public">
+                  <span class="di-spinner" *ngIf="uploadingKeyFile.public" aria-hidden="true"></span>
+                  {{ uploadingKeyFile.public ? 'Uploading…' : 'Upload File' }}
+                </button>
+                <span class="key-file-name" *ngIf="sourceConfig.sftpPublicKeyFile && !uploadingKeyFile.public" [title]="sourceConfig.sftpPublicKeyFile">
+                  ✓ {{ keyFileName.public || sourceConfig.sftpPublicKeyFile }}
+                </span>
+              </div>
+              <label class="form-label">SFTP Private Key File<span class="req">*</span></label>
+              <div class="key-file-field">
+                <input #privKeyInput type="file" class="key-file-input" (change)="onKeyFileSelected('private', $event)" />
+                <button class="btn-secondary key-file-btn" [axGuide]="'sftpPrivateKeyFile'" (click)="privKeyInput.click()" [disabled]="uploadingKeyFile.private">
+                  <span class="di-spinner" *ngIf="uploadingKeyFile.private" aria-hidden="true"></span>
+                  {{ uploadingKeyFile.private ? 'Uploading…' : 'Upload File' }}
+                </button>
+                <span class="key-file-name" *ngIf="sourceConfig.sftpPrivateKeyFile && !uploadingKeyFile.private" [title]="sourceConfig.sftpPrivateKeyFile">
+                  ✓ {{ keyFileName.private || sourceConfig.sftpPrivateKeyFile }}
+                </span>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Cloud storage config → EnsLib.AmazonS3.InboundAdapter (AWS S3) -->
+        <div class="wizard-section" *ngIf="sourceType === 'cloud'">
+          <div class="wizard-section-title">AWS S3 Details</div>
+          <div class="config-grid">
+            <label class="form-label">Bucket Name<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'cloudBucket'" [(ngModel)]="sourceConfig.cloudBucket" placeholder="my-data-bucket" />
+            <label class="form-label">Storage Region<span class="req">*</span></label>
+            <input class="form-input" [axGuide]="'cloudRegion'" [(ngModel)]="sourceConfig.cloudRegion" placeholder="us-east-1" />
+            <label class="form-label">AWS-S3 Credentials File<span class="req">*</span></label>
+            <div class="key-file-field">
+              <input #cloudCredInput type="file" class="key-file-input" (change)="onCloudCredFileSelected($event)" />
+              <button class="btn-secondary key-file-btn" [axGuide]="'cloudCredentialsFile'" (click)="cloudCredInput.click()" [disabled]="uploadingCloudCredFile">
+                <span class="di-spinner" *ngIf="uploadingCloudCredFile" aria-hidden="true"></span>
+                {{ uploadingCloudCredFile ? 'Uploading…' : 'Upload File' }}
+              </button>
+              <span class="key-file-name" *ngIf="sourceConfig.cloudCredentialsFile && !uploadingCloudCredFile" [title]="sourceConfig.cloudCredentialsFile">
+                ✓ {{ cloudCredFileName || sourceConfig.cloudCredentialsFile }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- File config → EnsLib.File.InboundAdapter (polls a directory on the IRIS host) -->
+        <div class="wizard-section" *ngIf="sourceType === 'file'">
+          <div class="wizard-section-title">File Polling Details</div>
+          <div class="config-grid">
+            <label class="form-label">File<span class="req">*</span></label>
+            <div class="key-file-field">
+              <input #localFileInput type="file" accept=".csv" class="key-file-input" (change)="onLocalFileSelected($event)" />
+              <button class="btn-secondary key-file-btn" [axGuide]="'filePath'" (click)="localFileInput.click()" [disabled]="uploadingLocalFile">
+                <span class="di-spinner" *ngIf="uploadingLocalFile" aria-hidden="true"></span>
+                {{ uploadingLocalFile ? 'Uploading…' : 'Upload File' }}
+              </button>
+              <span class="key-file-name" *ngIf="sourceConfig.filePath && !uploadingLocalFile" [title]="sourceConfig.filePath">
+                ✓ {{ localFileName || sourceConfig.filePath }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <!-- Test Connection — verify the remote server (SQL / SFTP / Cloud). -->
+          <button class="wizard-btn wizard-btn--outline" *ngIf="canTestConnection()" (click)="testConnection()" [disabled]="testingConnection">
+            <span class="test-spinner" *ngIf="testingConnection" aria-hidden="true"></span>
+            {{ testingConnection ? 'Testing…' : 'Test Connection' }}
+          </button>
+          <!-- Stays clickable with an empty required field, so clicking reveals the
+               "<field> is required" banner. Once the fields are filled, Next runs a
+               real connection test and only advances if it passes — Step 2
+               introspects the source immediately and can't run on a connection that
+               doesn't work. Disabled only while that test is in flight.
+               "Continue": the button saves this step on the way to the next one, but
+               it reads as the forward move the user is making (Step 3's "Save" is the
+               one that finishes and closes the wizard). -->
+          <button class="wizard-btn wizard-btn--outline" [axGuide]="'save-advance-button'" (click)="goDataStep()" [disabled]="testingConnection || savingCase">
+            <span class="test-spinner" *ngIf="verifyingForNext || savingCase" aria-hidden="true"></span>
+            {{ verifyingForNext ? 'Verifying connection…' : savingCase ? 'Saving…' : 'Continue' }}
+          </button>
+          <button class="wizard-btn wizard-cancel-btn" (click)="cancelWizard()">Cancel</button>
+        </div>
+        <!-- Prominent required-field banner (matches the cube/KPI form's error
+             treatment). Shows only AFTER the user tries to advance, so a fresh
+             form doesn't nag; scrolled into view from goDataStep(). -->
+        <div class="di-form-error" #step1ErrorEl *ngIf="step1Error">{{ step1Error }}</div>
+
+        <!-- Connection test outcome (success message or the service's error). Also
+             where a Next blocked by a failing connection reports itself, scrolled
+             into view from goDataStep(). Bound to currentConnectionResult, NOT the
+             raw result, so it disappears as soon as a connection field is edited
+             instead of describing a config that is no longer in the form. -->
+        <span class="test-result" #connectionResultEl
+              *ngIf="currentConnectionResult as result"
+              [class.test-result--success]="result.ok"
+              [class.test-result--error]="!result.ok">
+          {{ result.ok ? '✓ ' : '✕ ' }}{{ result.message }}
+        </span>
+      </div>
+
+      <!-- ── Step 2: Data (adapter-specific source selection) ── -->
+      <div class="wizard-body" *ngIf="currentStep === 2">
+
+        <!-- SQL adapter: schema → table → columns -->
+        <ng-container *ngIf="sourceType === 'database'">
+          <div class="wizard-section">
+            <div class="wizard-section-title">Schema<span class="req">*</span></div>
+            <div class="ds-loading" *ngIf="loadingSchemas">Loading schemas…</div>
+            <span *ngIf="!loadingSchemas && schemaError" class="test-result test-result--error">
+              ✕ {{ schemaError }}
+            </span>
+            <select *ngIf="!loadingSchemas && !schemaError" class="form-input form-select target-class-select" [(ngModel)]="selectedSchema" (ngModelChange)="onSchemaChange()">
+              <option value="" disabled hidden>Select a schema…</option>
+              <option *ngFor="let s of sqlSchemas" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+
+          <div class="wizard-section" *ngIf="selectedSchema">
+            <div class="wizard-section-title">Table<span class="req">*</span></div>
+            <div class="ds-loading" *ngIf="loadingTables">Loading tables…</div>
+            <span *ngIf="!loadingTables && tableError" class="test-result test-result--error">
+              ✕ {{ tableError }}
+            </span>
+            <select *ngIf="!loadingTables && !tableError" class="form-input form-select target-class-select" [(ngModel)]="selectedTable" (ngModelChange)="onTableChange()">
+              <option value="" disabled hidden>Select a table…</option>
+              <option *ngFor="let t of sqlTables" [value]="t">{{ t }}</option>
+            </select>
+            <div class="ds-loading" *ngIf="!loadingTables && !tableError && sqlTables.length === 0">No tables in this schema.</div>
+          </div>
+
+          <div class="wizard-section" *ngIf="selectedTable">
+            <div class="wizard-section-title">Columns</div>
+            <div class="ds-loading" *ngIf="loadingColumns">Loading columns…</div>
+            <span *ngIf="!loadingColumns && columnError" class="test-result test-result--error">
+              ✕ {{ columnError }}
+            </span>
+            <div class="source-columns-wrap" *ngIf="!loadingColumns && !columnError && sqlColumns.length">
+              <div class="source-columns-scroll">
+                <table class="source-columns-table">
+                  <thead>
+                    <tr>
+                      <th class="col-src-name">Column Name</th>
+                      <th class="col-src-type">Data Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let c of sqlColumns; trackBy: trackByIndex">
+                      <td class="mono">{{ c.name }}</td>
+                      <td class="type-badge">{{ c.dataType }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- FTP/SFTP adapter: remote file browser → CSV preview -->
+        <ng-container *ngIf="sourceType === 'ftp'">
+          <div class="wizard-section">
+            <div class="wizard-section-title">Remote File Browser</div>
+            <div class="ftp-browser">
+              <!-- Toolbar: Up control + breadcrumb of the current path -->
+              <div class="ftp-browser-toolbar">
+                <button class="ftp-up-btn" (click)="ftpGoUp()" [disabled]="ftpPathSegments.length === 0" title="Parent directory" aria-label="Parent directory">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <nav class="ftp-breadcrumb" aria-label="Remote path">
+                  <button class="ftp-crumb" [class.ftp-crumb--current]="ftpPathSegments.length === 0" (click)="ftpGoToDepth(0)">
+                    <span class="ftp-crumb-icon">🖥</span> Root
+                  </button>
+                  <ng-container *ngFor="let seg of ftpPathSegments; let i = index; let last = last">
+                    <span class="ftp-crumb-sep">›</span>
+                    <button class="ftp-crumb" [class.ftp-crumb--current]="last" (click)="ftpGoToDepth(i + 1)">{{ seg }}</button>
+                  </ng-container>
+                </nav>
+              </div>
+              <!-- Directory listing -->
+              <div class="ftp-browser-body">
+                <div class="ds-loading ftp-browser-status" *ngIf="loadingFtpDir">Loading directory…</div>
+                <span *ngIf="!loadingFtpDir && ftpError" class="test-result test-result--error ftp-browser-status">
+                  ✕ {{ ftpError }}
+                </span>
+                <div class="ds-list" *ngIf="!loadingFtpDir && !ftpError">
+                  <div
+                    *ngFor="let e of ftpEntries"
+                    class="ds-item"
+                    [class.ds-item--active]="e.type === 'csv' && selectedCsvPath === (ftpCurrentPath === '/' ? '' : ftpCurrentPath) + '/' + e.name"
+                    [class.ds-item--disabled]="e.type === 'file'"
+                    (click)="e.type === 'folder' ? enterFtpFolder(e.name) : e.type === 'csv' && selectCsvFile(e.name)"
+                  >
+                    <!-- CSV rows carry a radio; clicking it OR the filename selects the file. -->
+                    <input
+                      *ngIf="e.type === 'csv'"
+                      type="radio"
+                      class="ds-radio"
+                      name="ftpCsvSelect"
+                      [checked]="selectedCsvPath === (ftpCurrentPath === '/' ? '' : ftpCurrentPath) + '/' + e.name"
+                      (change)="selectCsvFile(e.name)"
+                      [attr.aria-label]="'Select ' + e.name"
+                    />
+                    <span class="ds-radio-spacer" *ngIf="e.type !== 'csv'"></span>
+                    <span class="ds-icon">{{ e.type === 'folder' ? '📁' : e.type === 'csv' ? '📄' : '📎' }}</span>
+                    <span>{{ e.name }}</span>
+                    <span class="ftp-entry-tag" *ngIf="e.type === 'file'">not selectable</span>
+                  </div>
+                  <div class="ds-empty ftp-browser-status" *ngIf="ftpEntries.length === 0">This folder is empty.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-section" *ngIf="selectedCsvPath">
+            <div class="wizard-section-title">Preview — {{ selectedCsvName }}</div>
+            <label class="checkbox-label header-row-option" [axGuide]="'sourceHasHeader'">
+              <input type="checkbox" [(ngModel)]="sourceHasHeader" (ngModelChange)="onHeaderRowChange()" />
+              <span>Source data contains a header row</span>
+            </label>
+            <div class="ds-loading" *ngIf="loadingCsvPreview">Reading file…</div>
+            <span *ngIf="!loadingCsvPreview && csvPreviewError" class="test-result test-result--error">
+              ✕ {{ csvPreviewError }}
+            </span>
+            <div class="csv-preview-wrap" *ngIf="!loadingCsvPreview && !csvPreviewError && csvPreview">
+              <table class="schema-table csv-preview-table">
+                <thead>
+                  <tr>
+                    <th *ngFor="let col of csvPreview.columns">
+                      <div class="csv-col-name mono">{{ col.name }}</div>
+                      <div class="csv-col-type">{{ col.dataType }}</div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of csvPreview.rows; trackBy: trackByIndex">
+                    <td *ngFor="let cell of row; trackBy: trackByIndex" class="mono">{{ cell }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Cloud adapter: object-storage browser → CSV preview (same UI as FTP,
+             backed by its own independent cloud service methods). -->
+        <ng-container *ngIf="sourceType === 'cloud'">
+          <div class="wizard-section">
+            <div class="wizard-section-title">Cloud File Browser</div>
+            <div class="ftp-browser">
+              <!-- Toolbar: Up control + breadcrumb of the current key prefix -->
+              <div class="ftp-browser-toolbar">
+                <button class="ftp-up-btn" (click)="cloudGoUp()" [disabled]="cloudPathSegments.length === 0" title="Parent directory" aria-label="Parent directory">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <nav class="ftp-breadcrumb" aria-label="Bucket path">
+                  <button class="ftp-crumb" [class.ftp-crumb--current]="cloudPathSegments.length === 0" (click)="cloudGoToDepth(0)">
+                    <span class="ftp-crumb-icon">☁</span> Bucket
+                  </button>
+                  <ng-container *ngFor="let seg of cloudPathSegments; let i = index; let last = last">
+                    <span class="ftp-crumb-sep">›</span>
+                    <button class="ftp-crumb" [class.ftp-crumb--current]="last" (click)="cloudGoToDepth(i + 1)">{{ seg }}</button>
+                  </ng-container>
+                </nav>
+              </div>
+              <!-- Object listing -->
+              <div class="ftp-browser-body">
+                <div class="ds-loading ftp-browser-status" *ngIf="loadingCloudDir">Loading objects…</div>
+                <span *ngIf="!loadingCloudDir && cloudError" class="test-result test-result--error ftp-browser-status">
+                  ✕ {{ cloudError }}
+                </span>
+                <div class="ds-list" *ngIf="!loadingCloudDir && !cloudError">
+                  <div
+                    *ngFor="let e of cloudEntries"
+                    class="ds-item"
+                    [class.ds-item--active]="e.type === 'csv' && selectedCloudCsvPath === (cloudCurrentPath === '/' ? '' : cloudCurrentPath) + '/' + e.name"
+                    [class.ds-item--disabled]="e.type === 'file'"
+                    (click)="e.type === 'folder' ? enterCloudFolder(e.name) : e.type === 'csv' && selectCloudCsvFile(e.name)"
+                  >
+                    <!-- CSV rows carry a radio; clicking it OR the filename selects the object. -->
+                    <input
+                      *ngIf="e.type === 'csv'"
+                      type="radio"
+                      class="ds-radio"
+                      name="cloudCsvSelect"
+                      [checked]="selectedCloudCsvPath === (cloudCurrentPath === '/' ? '' : cloudCurrentPath) + '/' + e.name"
+                      (change)="selectCloudCsvFile(e.name)"
+                      [attr.aria-label]="'Select ' + e.name"
+                    />
+                    <span class="ds-radio-spacer" *ngIf="e.type !== 'csv'"></span>
+                    <span class="ds-icon">{{ e.type === 'folder' ? '📁' : e.type === 'csv' ? '📄' : '📎' }}</span>
+                    <span>{{ e.name }}</span>
+                    <span class="ftp-entry-tag" *ngIf="e.type === 'file'">not selectable</span>
+                  </div>
+                  <div class="ds-empty ftp-browser-status" *ngIf="cloudEntries.length === 0">This folder is empty.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-section" *ngIf="selectedCloudCsvPath">
+            <div class="wizard-section-title">Preview — {{ selectedCloudCsvName }}</div>
+            <label class="checkbox-label header-row-option" [axGuide]="'sourceHasHeader'">
+              <input type="checkbox" [(ngModel)]="sourceHasHeader" (ngModelChange)="onHeaderRowChange()" />
+              <span>Source data contains a header row</span>
+            </label>
+            <div class="ds-loading" *ngIf="loadingCloudCsvPreview">Reading file…</div>
+            <span *ngIf="!loadingCloudCsvPreview && cloudCsvPreviewError" class="test-result test-result--error">
+              ✕ {{ cloudCsvPreviewError }}
+            </span>
+            <div class="csv-preview-wrap" *ngIf="!loadingCloudCsvPreview && !cloudCsvPreviewError && cloudCsvPreview">
+              <table class="schema-table csv-preview-table">
+                <thead>
+                  <tr>
+                    <th *ngFor="let col of cloudCsvPreview.columns">
+                      <div class="csv-col-name mono">{{ col.name }}</div>
+                      <div class="csv-col-type">{{ col.dataType }}</div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of cloudCsvPreview.rows; trackBy: trackByIndex">
+                    <td *ngFor="let cell of row; trackBy: trackByIndex" class="mono">{{ cell }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Local File adapter: header-row option + preview of the Step-1 upload -->
+        <ng-container *ngIf="sourceType === 'file'">
+          <div class="wizard-section" *ngIf="!sourceConfig.filePath">
+            <div class="ds-loading">Upload a file in the Service step to preview it here.</div>
+          </div>
+          <div class="wizard-section" *ngIf="sourceConfig.filePath">
+            <div class="wizard-section-title">Preview — {{ localFileName || sourceConfig.filePath }}</div>
+            <label class="checkbox-label header-row-option" [axGuide]="'sourceHasHeader'">
+              <input type="checkbox" [(ngModel)]="sourceHasHeader" (ngModelChange)="onHeaderRowChange()" />
+              <span>Source data contains a header row</span>
+            </label>
+            <div class="ds-loading" *ngIf="loadingLocalPreview">Reading file…</div>
+            <span *ngIf="!loadingLocalPreview && localPreviewError" class="test-result test-result--error">
+              ✕ {{ localPreviewError }}
+            </span>
+            <div class="csv-preview-wrap" *ngIf="!loadingLocalPreview && !localPreviewError && localCsvPreview">
+              <table class="schema-table csv-preview-table">
+                <thead>
+                  <tr>
+                    <th *ngFor="let col of localCsvPreview.columns">
+                      <div class="csv-col-name mono">{{ col.name }}</div>
+                      <div class="csv-col-type">{{ col.dataType }}</div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of localCsvPreview.rows; trackBy: trackByIndex">
+                    <td *ngFor="let cell of row; trackBy: trackByIndex" class="mono">{{ cell }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Other adapters have no data-selection step yet. -->
+        <div class="wizard-section" *ngIf="sourceType !== 'database' && sourceType !== 'ftp' && sourceType !== 'cloud' && sourceType !== 'file'">
+          <div class="ds-loading">No data selection is required for this source type.</div>
+        </div>
+
+        <div class="wizard-actions">
+          <button class="wizard-btn wizard-btn--outline" (click)="currentStep = 1">← Back</button>
+          <!-- Stays clickable with nothing selected, so clicking reveals the banner
+               below (Step 1's contract). Step 3 maps the SELECTED entity's columns,
+               so advancing without a schema+table / CSV file only moves the problem
+               onto a page that can't explain it. -->
+          <button class="wizard-btn wizard-btn--outline" (click)="goMappingStep()" [disabled]="savingCase">
+            <span class="test-spinner" *ngIf="savingCase" aria-hidden="true"></span>
+            {{ savingCase ? 'Saving…' : 'Continue' }}
+          </button>
+          <button class="wizard-btn wizard-cancel-btn" (click)="cancelWizard()">Cancel</button>
+        </div>
+        <!-- Prominent "select something first" banner — the same treatment as
+             Step 1's required-field error. Shows only AFTER a blocked Next, and
+             clears itself as soon as the selection is made. -->
+        <div class="di-form-error" #step2ErrorEl *ngIf="step2Error">{{ step2Error }}</div>
+      </div>
+
+      <!-- ── Step 3: Mapping ────────────────────────────────── -->
+      <div class="wizard-body wizard-body--mapping" *ngIf="currentStep === 3">
+
+        <!-- Section 1: target class -->
+        <div class="mapping-section">
+          <div class="mapping-section-title">1. Target Class<span class="req">*</span></div>
+          <div class="ds-loading" *ngIf="loadingTargetClasses">Loading target classes…</div>
+          <select *ngIf="!loadingTargetClasses" class="form-input form-select target-class-select" [axGuide]="'targetClass'" [(ngModel)]="selectedTargetClass" (ngModelChange)="onTargetClassChange()">
+            <option value="">Select a target class…</option>
+            <option *ngFor="let c of targetClasses" [value]="c">{{ c }}</option>
+          </select>
+
+          <div class="ds-loading" *ngIf="loadingTargetProperties">Loading properties…</div>
+        </div>
+
+        <!-- Section 2: field mapping (source columns → target properties) -->
+        <div class="mapping-section">
+          <div class="mapping-section-header">
+            <div class="mapping-section-title">2. Field Mapping</div>
+            <button
+              *ngIf="sourceColumns.length && selectedTargetClass"
+              class="auto-map-btn"
+              [axGuide]="'auto-map-button'"
+              (click)="autoMap()"
+              [disabled]="autoMapping"
+            >{{ autoMapping ? 'Auto-mapping…' : '✦ Auto-map' }}</button>
+          </div>
+
+          <div class="mapping-empty" *ngIf="!selectedTargetClass">
+            Select a target class above to map your source data columns here.
+          </div>
+          <div class="mapping-empty" *ngIf="selectedTargetClass && sourceColumns.length === 0">
+            No source data columns — select a CSV file or table in the Data Entity step.
+          </div>
+
+          <div class="mapping-card" *ngIf="sourceColumns.length && selectedTargetClass">
+            <div class="mapping-grid-scroll">
+            <table class="mapping-grid">
+              <thead>
+                <tr>
+                  <th class="col-source">Source Field</th>
+                  <th class="col-type">Type</th>
+                  <th class="col-arrow"></th>
+                  <th class="col-target-attr">Target Property</th>
+                  <th class="col-target-type">Target Property Type</th>
+                  <th class="col-transform">Transform</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let col of sourceColumns; let i = index; trackBy: trackByIndex"
+                    [class.row-mapped]="col.targetProperty" [class.row-unmapped]="!col.targetProperty">
+                  <td class="mono source-field-cell">{{ col.name || '—' }}</td>
+                  <td>
+                    <select class="cell-select" [axGuide]="'columns.' + i + '.type'" [(ngModel)]="col.type">
+                      <option *ngFor="let t of SOURCE_COLUMN_TYPES" [value]="t">{{ t }}</option>
+                    </select>
+                  </td>
+                  <td class="col-arrow">→</td>
+                  <td>
+                    <select class="cell-select" [axGuide]="'columns.' + i + '.targetProperty'" [(ngModel)]="col.targetProperty">
+                      <option value="">—</option>
+                      <optgroup label="Required" *ngIf="requiredProperties.length">
+                        <option *ngFor="let p of requiredProperties" [value]="p.name" [disabled]="isTargetPropertyTaken(p.name, col)">{{ p.name }}</option>
+                      </optgroup>
+                      <optgroup label="Optional" *ngIf="optionalProperties.length">
+                        <option *ngFor="let p of optionalProperties" [value]="p.name" [disabled]="isTargetPropertyTaken(p.name, col)">{{ p.name }}</option>
+                      </optgroup>
+                    </select>
+                  </td>
+                  <td><span class="type-badge" *ngIf="targetPropertyType(col)">{{ targetPropertyType(col) }}</span></td>
+                  <td>
+                    <div class="transform-cell">
+                      <select class="cell-select" [axGuide]="'columns.' + i + '.transform'" [(ngModel)]="col.transform" (ngModelChange)="onTransformChange(col)">
+                        <option *ngFor="let f of TRANSFORM_FUNCTIONS" [value]="f.value">{{ f.label }}</option>
+                      </select>
+                      <div class="transform-args" *ngIf="transformParams(col).length">
+                        <input
+                          *ngFor="let p of transformParams(col)"
+                          class="cell-input transform-arg"
+                          [ngModel]="col.transformArgs?.[p.key] || ''"
+                          (ngModelChange)="col.transformArgs = col.transformArgs || {}; col.transformArgs[p.key] = $event"
+                          [placeholder]="p.label"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-actions">
+          <button class="wizard-btn wizard-btn--outline" (click)="currentStep = 2">← Back</button>
+          <!-- Stays clickable with no target class, so clicking reveals the banner
+               below (the Step-1/2 contract). A draft saved without one carries
+               columns that map onto nothing and Deploy has no class to generate
+               against, so saveJob() refuses it. -->
+          <button class="wizard-btn wizard-btn--outline" [axGuide]="'create-button'" (click)="saveJob()" [disabled]="savingCase">
+            <span class="test-spinner" *ngIf="savingCase" aria-hidden="true"></span>
+            {{ savingCase ? 'Saving…' : 'Save' }}
+          </button>
+          <button class="wizard-btn wizard-cancel-btn" (click)="cancelWizard()">Cancel</button>
+        </div>
+        <!-- Prominent "select a target class first" banner — same treatment as the
+             Step-1 required-field and Step-2 data-entity errors. Shows only AFTER a
+             blocked save, and clears as soon as a class is chosen. -->
+        <div class="di-form-error" #step3ErrorEl *ngIf="step3Error">{{ step3Error }}</div>
+      </div>
+
+      </div><!-- end wizard-steps-col -->
+
+      </div><!-- end wizard-content-row -->
+    </div><!-- end wizard -->
+  </div>
+
+  <!-- "Claude key not provided". Deploy hands the pipeline to the AI
+       assistant, so without server-side Bedrock credentials there is nothing to
+       hand it to. The button stays enabled and this explains why nothing happened —
+       an acknowledgement, so there is one button (OK) and no Cancel. -->
+  <app-confirm-dialog
+    *ngIf="showAiKeyDialog"
+    title="Claude key not provided"
+    [message]="aiKeyMissingMessage"
+    confirmLabel="OK"
+    cancelLabel=""
+    (confirmed)="showAiKeyDialog = false"
+    (cancelled)="showAiKeyDialog = false">
+  </app-confirm-dialog>
+
+  <!-- Confirm: delete integration. Same treatment as the Cube/KPI deletes — a whole
+       configuration (connection, data entity, every field mapping) goes with no undo,
+       so it is never done straight off the click. -->
+  <app-confirm-dialog
+    *ngIf="pendingDeleteJob as job"
+    title="Delete integration"
+    [message]="'Delete “' + job.name + '”? Its connection details and field mappings are removed for good. Nothing already generated in SCO is touched.'"
+    confirmLabel="Delete"
+    [danger]="true"
+    (confirmed)="confirmDeleteIntegration()"
+    (cancelled)="cancelDeleteIntegration()">
+  </app-confirm-dialog>
+
+  <!-- Deploy pressed on an unfinished pipeline. Deploy generates IRIS classes from
+       this config, so an incomplete one fails deep inside the agent turn as a compile
+       error — this names every step still missing something instead. An
+       acknowledgement (one button), since the only way forward is to go and fix it. -->
+  <app-confirm-dialog
+    *ngIf="showNotReadyDialog"
+    title="This integration isn’t finished yet"
+    [message]="notReadyMessage"
+    confirmLabel="OK"
+    cancelLabel=""
+    (confirmed)="showNotReadyDialog = false"
+    (cancelled)="showNotReadyDialog = false">
+  </app-confirm-dialog>
+</div>
+
+<!-- Leave prompt: closing/navigating away from the wizard with unsaved edits.
+     Discard-only (DI persists per step at Save) — Leave drops the in-progress
+     edits; Keep editing returns to the wizard. -->
+<app-confirm-dialog
+  *ngIf="showLeaveConfirm"
+  title="Discard unsaved changes?"
+  message="Unsaved information will be lost."
+  confirmLabel="Leave without saving"
+  cancelLabel="Keep editing"
+  [danger]="true"
+  (confirmed)="leaveWithoutSaving()"
+  (cancelled)="leaveKeepEditing()">
+</app-confirm-dialog>

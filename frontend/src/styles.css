@@ -1,0 +1,349 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import "tailwindcss";
+
+/* Visually-hidden but present for assistive tech — used by the dashboard's persistent
+   live regions (Change 8), which must stay in the DOM so a text change is announced. */
+.db-visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip: rect(0 0 0 0); clip-path: inset(50%);
+  overflow: hidden; white-space: nowrap;
+}
+
+/* Shared dashboard tile-builder section chrome (SC-2665 / E4). Tokenized (--db-*) so it renders
+   in both light and dark themes — never the KPI condition builder's hardcoded hex. Generalized
+   from cube's .ccb__section-* / .ccb__control / .ccb__note so the KPI + Table builders consume ONE
+   shared home instead of each copying its own (National Park Principle). Deferred de-dup seam:
+   cube's .ccb__* and the .form-* copies (kpi.css, bi-cubes.css) should migrate here in a follow-up. */
+.db-builder-section { display: flex; flex-direction: column; gap: 4px; }
+.db-builder-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--db-text-secondary); display: flex; align-items: center; gap: 10px;
+}
+.db-builder-section-hint {
+  font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px;
+  color: var(--db-text-secondary);
+}
+.db-builder-control {
+  font-size: 13px; padding: 4px 8px; min-width: 140px;
+  border: 1px solid var(--db-border); border-radius: 4px;
+  background: var(--db-surface); color: var(--db-text);
+}
+.db-builder-note { font-size: 11px; color: var(--db-text-secondary); }
+@media (max-width: 640px) { .db-builder-control { min-width: 0; width: 100%; } }
+
+/* ──────────────────────────────────────────────────────────────
+   Dashboard design tokens (Change 3 / G1). Light values on :root so every
+   component reading var(--db-*) inherits them and non-dashboard code is
+   unaffected (it reads none of these). Text tokens meet WCAG AA on their
+   paired surface (ratios noted).
+   ────────────────────────────────────────────────────────────── */
+:root {
+  --db-surface: #ffffff;          /* tile background */
+  --db-canvas: #f5f5f7;           /* page / behind tiles */
+  --db-bar: #f5f5f7;              /* grid header bar */
+  --db-border: #e0e0e0;          /* separators (decorative) */
+  --db-text: #1d1d1f;            /* primary — 16.8:1 on surface */
+  --db-text-secondary: #5f5f5f;  /* secondary — 6.39:1 on surface (AA) */
+  --db-text-disabled: #767676;   /* disabled w/ meaning — 4.54:1 */
+  --db-accent: #0066cc;          /* links / sorted / focus — 5.57:1 */
+  --db-focus: #0066cc;           /* 2px focus ring */
+  --db-warn: #8a5b00;            /* warn text */
+  --db-warn-surface: #fff6e5;    /* warn panel bg (decorative) */
+  --db-warn-border: #f0e0b8;
+  --db-danger: #cc3300;          /* error text — 5.20:1 */
+  --db-danger-surface: #fdeeea;  /* error panel bg (decorative) */
+  --db-danger-border: #f2c4b8;
+}
+
+/* Page-shell convention (SC-2665 / E4). Two variants: full-bleed split-pane tool pages
+   opt into .page--full; centered reading pages opt into .page--reading. The inner reading
+   column (max-width/padding) stays per-page — see plan §Discovered/§9. */
+.page--full { flex: 1; min-height: 0; overflow: hidden; background: var(--db-canvas); }
+.page--reading { flex: 1; min-height: 0; overflow-y: auto; background: var(--db-canvas); }
+
+/* Shared list-panel toolbar header, used by the 4 tool pages' split-pane list panels
+   (kpi/bi-cubes/data-integration/resources — 4 byte-identical copies consolidated here). */
+.panel-header {
+  font-size: 13px; font-weight: 600; color: var(--db-text);
+  padding: 10px 16px; border-bottom: 1px solid var(--db-border);
+  flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+}
+
+/* Shared builder form chrome (SC-2665 / E4). Consolidated from the 4 tool-page copies
+   (kpi/bi-cubes/data-integration/resources); the deferred de-dup seam named at styles.css
+   .db-builder-* is now honoured. Tokenized on --db-*. Per-page overrides that remain are
+   intentional layout (grid column width, size variants), documented at each site. */
+.form-section {
+  background: var(--db-surface); border: 1px solid var(--db-border);
+  border-radius: 12px; padding: 14px 18px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.form-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--db-text-secondary); display: flex; align-items: center; gap: 10px;
+}
+.form-grid { display: grid; gap: 8px 12px; align-items: start; }  /* column width stays per-page */
+.form-grid--compact { gap: 6px 10px; }
+.form-label { font-size: 12px; color: var(--db-text-secondary); font-weight: 500; }
+.form-grid .form-label { padding-top: 6px; }  /* top-align labels only inside the grid */
+.required { color: var(--db-danger); }
+.form-input {
+  font-size: 13px; color: var(--db-text); background: #f9f9fb;
+  border: 1px solid var(--db-border); border-radius: 6px; padding: 5px 9px;
+  outline: none; width: 100%; box-sizing: border-box; font-family: inherit;
+}
+.form-input:focus { border-color: var(--db-accent); background: var(--db-surface); }
+.form-input[readonly] { color: #888; cursor: default; background: #f0f0f0; }
+.form-input[readonly]:focus { border-color: var(--db-border); background: #f0f0f0; }
+.form-input:disabled { background: #f0f0f2; color: #aaa; cursor: not-allowed; }
+.form-textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+.form-select { cursor: pointer; }
+.checkbox-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--db-text-secondary); cursor: pointer;
+}
+.form-grid .checkbox-label { padding-top: 6px; }
+
+/* ──────────────────────────────────────────────────────────────
+   Dashboard tile view-states (Track A). The view-only tiles — chart-tile-view
+   and table-tile-view — are unscoped standalone components that render bare
+   status/error markup (loading, empty, error+retry, source-gone, sort-revert).
+   Both share these classes, so the styling is global rather than duplicated in
+   each component. Themed through the --db-* tokens so a per-tile failure reads
+   correctly in both light and dark (spec §7 per-tile isolation, §9 both themes).
+   ────────────────────────────────────────────────────────────── */
+.tile-loading,
+.tile-empty {
+  margin: 0; padding: 12px; font-size: 13px; color: var(--db-text-secondary);
+}
+.tile-error,
+.tile-source-gone {
+  margin: 12px; padding: 10px 12px; font-size: 13px;
+  color: var(--db-danger); background: var(--db-danger-surface);
+  border: 1px solid var(--db-danger-border); border-radius: 6px;
+}
+.tile-error button {
+  margin-left: 10px; font-size: 12px; padding: 2px 10px; cursor: pointer;
+  color: var(--db-text); background: var(--db-surface);
+  border: 1px solid var(--db-border); border-radius: 4px;
+}
+.tile-sort-error {
+  margin: 8px 12px 0; padding: 6px 10px; font-size: 12px;
+  color: var(--db-warn); background: var(--db-warn-surface);
+  border: 1px solid var(--db-warn-border); border-radius: 4px;
+}
+
+/* L1 — ONE global focus ring, matching the app's guided-highlight, so keyboard
+   focus is consistent and clearly visible on every control (was the UA default
+   outline: auto 1px). */
+:focus-visible {
+  outline: 2px solid var(--db-focus);
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Assistant markdown (rendered from marked via [innerHTML]).
+   Must be GLOBAL — innerHTML content gets no Angular scoping attrs, so
+   component-scoped rules wouldn't apply. Self-contained values (no
+   component CSS vars).
+   ────────────────────────────────────────────────────────────── */
+.markdown { white-space: normal; }
+.markdown > *:first-child { margin-top: 0; }
+.markdown > *:last-child { margin-bottom: 0; }
+.markdown p { margin: 0 0 8px; }
+.markdown ul, .markdown ol { margin: 0 0 8px; padding-left: 22px; }
+.markdown ul { list-style: disc; }
+.markdown ol { list-style: decimal; }
+.markdown li { margin: 2px 0; }
+.markdown h1, .markdown h2, .markdown h3 { margin: 12px 0 6px; line-height: 1.25; font-weight: 600; }
+.markdown h1 { font-size: 1.25em; }
+.markdown h2 { font-size: 1.12em; }
+.markdown h3 { font-size: 1.04em; }
+.markdown strong { font-weight: 600; }
+.markdown em { font-style: italic; }
+.markdown code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em;
+  background: #f2f4f7; border: 1px solid #e3e6ea; border-radius: 4px; padding: 1px 5px;
+}
+.markdown pre {
+  background: #f6f8fa; border: 1px solid #e3e6ea;
+  border-radius: 8px; padding: 12px; overflow: auto; margin: 0 0 8px;
+}
+.markdown pre code { background: none; border: none; padding: 0; }
+.markdown table { border-collapse: collapse; margin: 0 0 8px; width: 100%; }
+.markdown th, .markdown td { border: 1px solid #e3e6ea; padding: 6px 10px; text-align: left; vertical-align: top; }
+.markdown th { background: #f6f8fa; font-weight: 600; }
+.markdown a { color: #0066cc; }
+.markdown blockquote { margin: 0 0 8px; padding: 2px 12px; border-left: 3px solid #e3e6ea; color: #656d76; }
+.markdown hr { border: none; border-top: 1px solid #e3e6ea; margin: 12px 0; }
+
+/* ──────────────────────────────────────────────────────────────
+   Guided-mode highlight — a pulsing ring the AI assistant puts on a
+   field/button it's directing the user to, via ui_highlight.
+   ────────────────────────────────────────────────────────────── */
+.guided-highlight {
+  outline: 2px solid #0066cc !important;
+  outline-offset: 2px;
+  border-radius: 6px;
+  animation: guided-pulse 1.4s ease-in-out infinite;
+}
+@keyframes guided-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 102, 204, 0.35); }
+  50% { box-shadow: 0 0 0 5px rgba(0, 102, 204, 0.12); }
+}
+
+/* A subtler mark on a field the assistant JUST filled via ui_set_field — a soft
+   blue fill + border that flashes in, so the user sees WHAT changed without the
+   attention-grabbing pulse of guided-highlight. Cleared on the next click. */
+.guided-changed {
+  outline: 1.5px solid rgba(0, 102, 204, 0.6) !important;
+  outline-offset: 1px;
+  border-radius: 6px;
+  background-color: rgba(0, 102, 204, 0.08) !important;
+  animation: guided-changed-flash 0.5s ease-out;
+}
+@keyframes guided-changed-flash {
+  0% { background-color: rgba(0, 102, 204, 0.28); }
+  100% { background-color: rgba(0, 102, 204, 0.08); }
+}
+
+/* Reduced-motion guard (Change 9 / L2, WCAG 2.3.3). toast-host, bi-cubes and kpi
+   already guard theirs; the Dashboard's guided affordances did not. Keep the static
+   outline/fill so the affordance still SHOWS which field is guided — only the motion
+   is removed. */
+@media (prefers-reduced-motion: reduce) {
+  .guided-highlight { animation: none; }
+  .guided-changed { animation: none; }
+}
+
+/* Picker placement flash — a one-shot soft-blue fill on the condition row a tree pick just filled.
+   Distinct from .guided-changed (assistant-owned): single writer, bound the Angular way from the KPI
+   component's justPlaced signal. Own reduced-motion guard below. */
+.condition-row--placed .condition-face {
+  animation: condition-placed-flash 0.6s ease-out;
+}
+@keyframes condition-placed-flash {
+  0% { background-color: color-mix(in srgb, var(--db-accent) 22%, transparent); }
+  100% { background-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .condition-row--placed .condition-face { animation: none; }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   CSS tooltip via [data-tooltip].
+   Native `title` tooltips are unreliable in the VSCode webview and get
+   clipped by our overflow:hidden containers, so buttons use this instead.
+   The tooltip renders ABOVE the element and never intercepts the pointer.
+   ────────────────────────────────────────────────────────────── */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  /* Wrap long hints to a bounded width so a centered bubble on an edge button
+     can't overflow far past its scroll container. `overflow-wrap: anywhere` is
+     load-bearing: a hint can carry an unbroken token with no spaces to wrap at (a
+     JDBC URL, a file path), and `white-space: normal` alone cannot break one — the
+     text then runs straight out of the bubble and gets clipped. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  width: max-content;
+  max-width: 220px;
+  text-align: left;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  padding: 5px 8px;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+/* Small arrow under the bubble. */
+[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1d1d1f;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+[data-tooltip]:focus-visible::after,
+[data-tooltip]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Disabled buttons still show their tooltip (explains why they're disabled)
+   even though pointer events are off — re-enable hover just for the tooltip. */
+[data-tooltip]:disabled {
+  pointer-events: auto;
+}
+
+/* The SVG inside a tooltip button must not become the hover target, or the
+   bubble flickers / fails to resolve against the button. */
+[data-tooltip] > svg {
+  pointer-events: none;
+}
+
+/* A right-aligned button (e.g. the last icon in a top-right action row) would
+   push the centered bubble off-screen; anchor those to the right edge. */
+[data-tooltip-align="end"]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+[data-tooltip-align="end"]::before {
+  left: auto;
+  right: 10px;
+  transform: none;
+}
+
+/* A left-edge button (e.g. the first button in a bottom action row) would push
+   the centered bubble off the container's left edge; grow it rightward instead. */
+[data-tooltip-align="start"]::after {
+  left: 0;
+  right: auto;
+  transform: none;
+}
+[data-tooltip-align="start"]::before {
+  left: 10px;
+  right: auto;
+  transform: none;
+}
+
+/* Render BELOW the element instead of above — for buttons near the top of a
+   scroll container, where an upward bubble would be clipped. */
+[data-tooltip-pos="below"]::after {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+[data-tooltip-pos="below"]::before {
+  bottom: auto;
+  top: calc(100% + 1px);
+  border-top-color: transparent;
+  border-bottom-color: #1d1d1f;
+}

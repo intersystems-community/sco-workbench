@@ -1,0 +1,37 @@
+.dg { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+
+.dg__bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; border-bottom: 1px solid var(--db-border); background: var(--db-bar);
+  font-size: 12px; color: var(--db-text-secondary);
+}
+.dg__spacer { flex: 1; }
+.dg__range { font-variant-numeric: tabular-nums; }
+.dg__loading { color: var(--db-text-secondary); }
+
+.dg__nav {
+  font-size: 12px; padding: 3px 10px;
+  border: 1px solid var(--db-border); border-radius: 4px; background: var(--db-surface); color: var(--db-text); cursor: pointer;
+}
+.dg__nav:disabled { color: var(--db-text-disabled); cursor: default; }
+.dg__page { font-variant-numeric: tabular-nums; color: var(--db-text-secondary); }
+
+.dg__scroll { flex: 1; min-height: 0; overflow: auto; }
+
+.dg__table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dg__table th, .dg__table td {
+  text-align: left; padding: 5px 10px;
+  border-bottom: 1px solid var(--db-border); white-space: nowrap; color: var(--db-text);
+}
+.dg__table th {
+  position: sticky; top: 0;
+  background: var(--db-surface); color: var(--db-text); font-weight: 600;
+}
+.dg__table th.is-sorted { color: var(--db-accent); }
+
+.dg__sort {
+  border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer;
+}
+.dg__arrow { font-size: 10px; }
+
+.dg__empty { padding: 16px 10px; color: var(--db-text-secondary); font-size: 12px; }

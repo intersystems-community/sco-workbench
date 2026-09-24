@@ -1,0 +1,212 @@
+<div class="sd-page page--reading">
+  <div class="sd-main">
+    <app-page-header eyebrow="Optional Step" heading="Load sample data" />
+    <p class="sd-intro" data-testid="sample-data-intro">
+      Everything you build in the workbench - your data model, KPIs, analytics cubes and dashboards
+      - rests on supply chain data held in your Supply Chain Orchestrator instance. How that data
+      gets there is up to you: connect a source of your own from the
+      <strong>Data Integration</strong> page, or start from one of the ready-made sample data sets
+      on this page. This step is <strong>optional</strong> - if your instance already holds the data
+      you care about, you can skip it entirely.
+    </p>
+    <p class="sd-intro">
+      Sample data is the quickest way to have something real to work with. Each set is a small,
+      self-contained supply chain - customers, suppliers, products, orders and the like - kept ready
+      on the server. Pick a set below to read what it covers, then press
+      <strong>Load</strong> to bring it into your instance.
+    </p>
+    <!-- Stated BEFORE the button, not in the result: whether Load can harm the data the user
+         already has is the one thing they need in order to press it. -->
+    <div class="sd-tip" data-testid="sample-data-note">
+      <svg
+        class="sd-tip-icon"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
+        <circle cx="8" cy="8" r="6.5" />
+        <path d="M8 7v4M8 5.5v.5" />
+      </svg>
+      <span>
+        Loading is safe to try. A sample set is
+        <strong>added alongside whatever your instance already holds</strong> — nothing of yours is
+        changed, emptied or overwritten, and loading the same set a second time does not duplicate
+        it. Anything in a set that does not fit your instance is left out rather than forced in, and
+        the summary after a load tells you what went in and what did not. A large set can take a few
+        seconds.
+      </span>
+    </div>
+
+    @if (loading()) {
+      <p class="sd-note" data-testid="sample-data-loading">Loading sample data sets…</p>
+    } @else if (error()) {
+      <p class="sd-error" data-testid="sample-data-error">{{ error() }}</p>
+      <button class="sd-retry" type="button" data-testid="sample-data-retry" (click)="reload()">
+        Retry
+      </button>
+    } @else {
+      <div class="sd-picker">
+        <label class="sd-field">
+          <span class="sd-label">Sample data set</span>
+          <!-- Selection rides on each option's [selected] rather than the select's
+               [value], so a programmatic pre-select is order-independent (the same
+               reason as the dashboard's table picker). -->
+          <select
+            class="sd-select"
+            data-testid="sample-data-select"
+            [disabled]="!folders().length || busy()"
+            (change)="onSelect($any($event.target).value)"
+          >
+            <option value="" disabled [selected]="selected() === null">
+              {{
+                folders().length ? 'Select a sample data set…' : 'No sample data sets available'
+              }}
+            </option>
+            @for (folder of folders(); track folder) {
+              <option [value]="folder" [selected]="folder === selected()">{{ folder }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Enabled only once a set is picked, and disabled again for the whole load so a
+             second click cannot restart it mid-flight; the title says why while it is off. -->
+        <button
+          class="sd-load"
+          type="button"
+          data-testid="sample-data-load"
+          [disabled]="!canLoad()"
+          [title]="
+            busy()
+              ? 'Loading ' + loadingSet()
+              : canLoad()
+                ? 'Load ' + selected()
+                : 'Select a sample data set first'
+          "
+          (click)="load()"
+        >
+          {{ busy() ? 'Loading…' : 'Load' }}
+        </button>
+      </div>
+
+      <!-- Everything about the CHOSEN set, kept directly under the picker and under ONE
+           label: what the set says it is, the tables a Load would fill, and — once a load has
+           run — what actually went into them. Unlabelled, the set's own words read as more of
+           the page's copy above (a set calling itself "development data" would look like the
+           workbench saying that about itself), and the row counts read as a fact about the
+           instance rather than about this set. -->
+      <!-- `showPlan()` already covers "a set is picked and has not been loaded yet", which is
+           every state that has a description or a load in flight; `report()` is the one after. -->
+      @if (showPlan() || report()) {
+        <div class="sd-about">
+          <h3 class="sd-about-title" data-testid="sample-data-about-title">
+            About this data set
+          </h3>
+          @if (previewIntro()) {
+            <p class="sd-preview-intro" data-testid="sample-data-preview-intro">
+              {{ previewIntro() }}
+            </p>
+          }
+
+          <!-- What Load WOULD populate, from the moment a set is picked until a load has
+               reported — at which point the report below says which tables actually took
+               rows, and this list would be the same tables over again, now describing the
+               past. (So the plan and the report are never on screen together.) -->
+          @if (showPlan()) {
+            <div class="sd-preview" data-testid="sample-data-preview">
+              @if (previewing()) {
+                <p class="sd-note" data-testid="sample-data-preview-loading">
+                  Checking which tables <strong>{{ selected() }}</strong> would populate…
+                </p>
+              } @else if (previewError()) {
+                <!-- Information only: the Load button is unaffected, so this is a note, not
+                     an error banner competing with the load's own. -->
+                <p class="sd-note" data-testid="sample-data-preview-error">
+                  {{ previewError() }}
+                </p>
+              } @else if (preview()) {
+                <p class="sd-preview-summary" data-testid="sample-data-preview-summary">
+                  {{ previewSummary() }}
+                </p>
+                @if (previewTables().length) {
+                  <ol class="sd-preview-list">
+                    @for (row of previewTables(); track row.file) {
+                      <li class="sd-preview-row" data-testid="sample-data-preview-row">
+                        <span class="sd-preview-name">{{ row.table }}</span>
+                        <span class="sd-table-file">{{ row.file }}</span>
+                      </li>
+                    }
+                  </ol>
+                }
+                @if (previewSkippedNote()) {
+                  <p class="sd-note" data-testid="sample-data-preview-skipped">
+                    {{ previewSkippedNote() }}
+                  </p>
+                }
+                @if (!preview()!.verified && preview()!.reason) {
+                  <p class="sd-note" data-testid="sample-data-preview-unverified">
+                    {{ preview()!.reason }}
+                  </p>
+                }
+              }
+            </div>
+          }
+
+          @if (busy()) {
+            <p class="sd-note" data-testid="sample-data-load-progress">
+              Loading <strong>{{ loadingSet() }}</strong> into your SCO instance. This can take a
+              few seconds for a large set.
+            </p>
+          }
+
+          <!-- What the load actually did, table by table: still a statement about this set —
+               how much of it your instance now holds — so it stays inside the label rather
+               than becoming a free-floating result further down the page. It replaces the plan
+               above (never both), so the block does not grow two lists of the same tables. -->
+          @if (report()) {
+            <div class="sd-report" data-testid="sample-data-report">
+              <p
+                class="sd-summary"
+                [class.sd-summary-bad]="!report()!.ok"
+                data-testid="sample-data-summary"
+              >
+                {{ summary() }}
+              </p>
+
+              @if (tableRows().length) {
+                <ul class="sd-tables">
+                  @for (row of tableRows(); track row.file) {
+                    <li
+                      class="sd-table-row"
+                      [class.sd-table-bad]="!row.ok"
+                      [class.sd-table-skipped]="row.skipped"
+                      data-testid="sample-data-report-row"
+                    >
+                      <span class="sd-table-name">{{ row.table }}</span>
+                      <span class="sd-table-file">{{ row.file }}</span>
+                      <span class="sd-table-detail">{{ row.detail }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- OUTSIDE the block above: a load that failed says nothing about the data set, only
+           that the attempt did not get through. -->
+      @if (loadError()) {
+        <p class="sd-error" data-testid="sample-data-load-error">{{ loadError() }}</p>
+      }
+
+      @if (!folders().length) {
+        <p class="sd-note" data-testid="sample-data-empty">
+          The server's SampleData folder has no data-set folders in it. Add one folder per data set
+          there (or point <code>SAMPLE_DATA_DIR</code> at the folder that holds them) and reload
+          this page.
+        </p>
+      }
+    }
+  </div>
+</div>

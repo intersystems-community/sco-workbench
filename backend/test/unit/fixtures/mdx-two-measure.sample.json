@@ -1,0 +1,20 @@
+{
+  "Info": { "Error": "", "ColCount": 3, "RowCount": 2 },
+  "Result": {
+    "Axes": [
+      { "%ID": "Axis_1", "Tuples": [
+        { "Members": [{ "Name": "availableQuantity" }] },
+        { "Members": [{ "Name": "totalQuantity" }] },
+        { "Members": [{ "Name": "%chartTotal" }] }
+      ] },
+      { "%ID": "Axis_2", "Tuples": [
+        { "Members": [{ "Name": "West" }], "MemberInfo": [{ "dimName": "region" }] },
+        { "Members": [{ "Name": "East" }], "MemberInfo": [{ "dimName": "region" }] }
+      ] }
+    ],
+    "CellData": [
+      { "ValueLogical": 10 }, { "ValueLogical": 30 }, { "ValueLogical": 2 },
+      { "ValueLogical": 20 }, { "ValueLogical": 50 }, { "ValueLogical": 2 }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+@if (open(); as req) {
+  <div class="te-backdrop" data-testid="tile-editor-backdrop" (click)="onCancel()">
+    <!-- The dialog stops backdrop clicks, owns the keyboard (Esc + Tab trap) and is
+         focusable itself (tabindex -1) so focus can land inside on open. -->
+    <div #dialog class="te-modal" role="dialog" aria-modal="true"
+         [attr.aria-label]="heading()" tabindex="-1"
+         (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
+      <header class="te-head">
+        <h2 class="te-title" data-testid="tile-editor-title">{{ heading() }}</h2>
+        <button type="button" class="te-close" data-testid="tile-editor-close"
+                (click)="onCancel()" aria-label="Close">×</button>
+      </header>
+
+      <div class="te-body">
+        @if (kind() === null) {
+          <!-- Add mode, before a choice is made: Table / Cube / KPI as top-level choices. -->
+          <fieldset class="te-kind">
+            <legend class="te-kind__legend">What do you want to add?</legend>
+            <button type="button" class="te-kind__btn" data-testid="kind-cube"
+                    (click)="chooseAdd('cube')">
+              <span class="te-kind__name">Cube</span>
+              <span class="te-kind__desc">A chart from a cube</span>
+            </button>
+            <button type="button" class="te-kind__btn" data-testid="kind-kpi"
+                    (click)="chooseAdd('kpi')">
+              <span class="te-kind__name">KPI</span>
+              <span class="te-kind__desc">A chart from a KPI</span>
+            </button>
+            <button type="button" class="te-kind__btn" data-testid="kind-table"
+                    (click)="chooseAdd('table')">
+              <span class="te-kind__name">Table</span>
+              <span class="te-kind__desc">Raw rows from a data table</span>
+            </button>
+          </fieldset>
+        } @else {
+          <label class="te-field">
+            <span class="te-label">Title (optional)</span>
+            <input type="text" class="te-input" data-testid="tile-title-input"
+                   [value]="titleText()" (input)="titleText.set($any($event.target).value)"
+                   placeholder="A default is used when left blank" />
+          </label>
+
+          @if (kind() === 'table') {
+            <app-table-builder [selection]="tableInitial()"
+                               (selectionChange)="onSelection($event)"
+                               (valid)="builderValid.set($event)" />
+          } @else if (kind() === 'cube') {
+            <app-cube-chart-builder [selection]="cubeInitial()"
+                                    (selectionChange)="onSelection($event)"
+                                    (valid)="builderValid.set($event)" />
+          } @else if (kind() === 'kpi') {
+            <app-kpi-chart-builder [selection]="kpiInitial()"
+                                   (selectionChange)="onSelection($event)"
+                                   (valid)="builderValid.set($event)" />
+          }
+        }
+      </div>
+
+      <footer class="te-actions">
+        <button type="button" class="te-btn te-btn--ghost" data-testid="tile-editor-cancel"
+                (click)="onCancel()">Cancel</button>
+        <button type="button" class="te-btn te-btn--primary" data-testid="tile-editor-save"
+                [disabled]="!canSave()" [attr.title]="saveDisabledReason()" (click)="onSave()">Save</button>
+      </footer>
+    </div>
+  </div>
+}

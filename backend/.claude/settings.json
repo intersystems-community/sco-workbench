@@ -1,0 +1,3 @@
+{
+  "claudeMdExcludes": ["**/.claude/CLAUDE.md", "/Users/*/CLAUDE.md", "/home/*/CLAUDE.md"]
+}

@@ -1,0 +1,8 @@
+{
+    "Info": {
+        "Error": {
+            "ErrorCode": "5001",
+            "ErrorMessage": "ERROR #5001: Measure not found: SALESORDERCUBE:nosuchmeasure"
+        }
+    }
+}

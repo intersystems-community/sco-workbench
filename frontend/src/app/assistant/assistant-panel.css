@@ -1,0 +1,319 @@
+/* Embedded assistant panel body. Palette aligned to the workbench (accent
+   #0066cc, SF Pro, light theme). The docking chrome lives in the shell. */
+:host {
+  display: block;
+  height: 100%;
+  --ax-accent: #0066cc;
+  --ax-accent-deep: #0a5bb5;
+  --ax-border: #e3e6ea;
+  --ax-bg: #ffffff;
+  --ax-bg-2: #f5f5f7;
+  --ax-text: #1d1d1f;
+  --ax-dim: #656d76;
+  --ax-ok: #1a7f37;
+  --ax-err: #cf222e;
+  --ax-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.ax-panel {
+  position: relative; /* anchors the history popover */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--ax-bg);
+  color: var(--ax-text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ---------- Transcript ---------- */
+.ax-messages {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+}
+
+.ax-msg { display: flex; }
+.ax-msg--user { align-self: flex-end; max-width: 88%; }
+.ax-msg--user .ax-msg__body {
+  background: var(--ax-bg-2);
+  border: 1px solid var(--ax-border);
+  border-radius: 14px;
+  padding: 9px 13px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.ax-msg--ai { align-self: stretch; max-width: 100%; width: 100%; }
+
+/* ---------- Timeline ---------- */
+.ax-turn { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; }
+.ax-turn::before {
+  content: "";
+  position: absolute;
+  left: 3.5px; top: 12px; bottom: 12px;
+  width: 1px; background: var(--ax-border);
+}
+.ax-item { position: relative; display: flex; align-items: flex-start; gap: 12px; padding: 7px 0; }
+.ax-dot {
+  flex: none; width: 8px; height: 8px; border-radius: 50%;
+  margin-top: 6px; background: #c2c9d2;
+  box-shadow: 0 0 0 4px var(--ax-bg); z-index: 1;
+}
+.ax-dot--muted { background: #c2c9d2; }
+.ax-dot--run { background: #c2c9d2; animation: ax-pulse 1.1s ease-in-out infinite; }
+.ax-dot--ok { background: #7fc99a; }
+.ax-dot--err { background: var(--ax-err); }
+@keyframes ax-pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+.ax-text { flex: 1; min-width: 0; color: var(--ax-text); word-wrap: break-word; }
+.ax-note { color: var(--ax-dim); font-style: italic; }
+
+/* Thinking indicator */
+.ax-thinking { align-items: center; }
+.ax-spinner {
+  flex: none; width: 8px; height: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ax-accent); font-size: 13px; line-height: 1;
+  animation: ax-spin 1.4s linear infinite;
+}
+@keyframes ax-spin { to { transform: rotate(360deg); } }
+.ax-thinking__word {
+  color: var(--ax-dim); font-size: 13px;
+  background: linear-gradient(90deg, var(--ax-dim) 25%, var(--ax-text) 50%, var(--ax-dim) 75%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ax-shimmer 2s linear infinite;
+}
+@keyframes ax-shimmer { to { background-position: -200% 0; } }
+
+/* Steps */
+.ax-step__main { flex: 1; min-width: 0; }
+.ax-step__row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ax-step__label { color: var(--ax-text); }
+.ax-step.error .ax-step__label { color: var(--ax-err); }
+.ax-step__summary {
+  color: var(--ax-dim); font-family: var(--ax-mono); font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.ax-step__toggle {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 0;
+  background: none; border: none; cursor: pointer; color: var(--ax-dim); font: inherit; font-size: 12px;
+}
+.ax-step__toggle:hover, .ax-step__toggle:hover .ax-step__toolname { color: var(--ax-accent); }
+.ax-step__toolname { font-family: var(--ax-mono); font-size: 11.5px; color: var(--ax-dim); }
+.ax-step__chevron { font-size: 10px; }
+.ax-step__body { margin-top: 6px; }
+
+.ax-section { margin-top: 8px; }
+.ax-section:first-child { margin-top: 0; }
+.ax-section__label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px;
+  color: var(--ax-dim); margin-bottom: 4px;
+}
+.ax-section__pre {
+  margin: 0; padding: 10px 12px;
+  background: var(--ax-bg-2); border: 1px solid var(--ax-border); border-radius: 6px;
+  font-family: var(--ax-mono); font-size: 12px; color: var(--ax-text);
+  white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto;
+}
+
+/* Markdown */
+/* NOTE: `.markdown` rules live in GLOBAL styles.css, not here. The content is
+   injected via [innerHTML] (marked output), so Angular's view-encapsulation
+   attributes are never applied to it — scoped rules here wouldn't match. */
+
+/* ---------- Inline overlay for confirm / ask ---------- */
+/* Sits directly above the composer (a flex sibling of the transcript + form),
+   so the card rests immediately on top of the input box rather than floating in
+   the middle of the transcript. The card itself is draggable from there. */
+.ax-overlay {
+  flex-shrink: 0;
+  z-index: 5;
+  padding: 0 16px 6px;
+}
+
+/* ---------- Empty state ---------- */
+.ax-empty { margin: auto; text-align: center; color: var(--ax-dim); max-width: 460px; padding: 24px 16px; }
+.ax-empty__greeting { color: var(--ax-text); font-size: 19px; font-weight: 400; line-height: 1.4; margin: 0; }
+
+/* ---------- History popover (compact overlay, top-right) ---------- */
+.ax-history-pop {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  left: 8px;
+  max-width: 380px;
+  margin-left: auto;
+  z-index: 40;
+  background: var(--ax-bg-1, #fff);
+  border: 1px solid var(--ax-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 60%;
+}
+.ax-history-pop__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ax-border);
+  color: var(--ax-dim);
+  flex-shrink: 0;
+}
+.ax-history-pop__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--ax-text);
+}
+.ax-history-pop__input:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+.ax-history-pop__list { overflow-y: auto; padding: 6px; min-height: 0; }
+.ax-history-pop__item {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  padding: 9px 11px; border-radius: 8px;
+  border: 1px solid transparent; background: transparent; color: var(--ax-text);
+  cursor: pointer; font-size: 13px;
+  transition: background 0.12s;
+}
+.ax-history-pop__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.ax-history-pop__item:hover { background: var(--ax-bg-2); }
+.ax-history-pop__item.active { background: var(--ax-bg-2); font-weight: 600; }
+.ax-history-pop__empty { padding: 16px; color: var(--ax-dim); font-size: 13px; text-align: center; }
+
+/* Spinner badge on a history row whose session is still streaming in the background. */
+.ax-history-pop__run { flex-shrink: 0; display: inline-flex; }
+.ax-run-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 2px solid var(--ax-bg-2); border-top-color: #0066cc;
+  animation: ax-spin 0.7s linear infinite;
+}
+
+/* Delete button on a history row — hidden until the row is hovered/focused. */
+.ax-history-pop__delete {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0;
+  border: none; border-radius: 6px; background: transparent;
+  color: var(--ax-dim); cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.ax-history-pop__delete svg { width: 15px; height: 15px; }
+.ax-history-pop__item:hover .ax-history-pop__delete,
+.ax-history-pop__item:focus-within .ax-history-pop__delete { opacity: 1; }
+.ax-history-pop__delete:hover { background: #fdecee; color: #cf222e; }
+
+/* ---------- Composer: one bordered container, input over controls ---------- */
+.ax-composer { padding: 12px 16px; border-top: 1px solid var(--ax-border); }
+
+.ax-composer__box {
+  display: flex; flex-direction: column;
+  background: var(--ax-bg);
+  border: 1px solid var(--ax-border); border-radius: 14px;
+  /* No overflow:hidden — the mode menu opens UPWARD and must escape the box. */
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+/* The composer's focus affordance. The textarea and the controls row read as ONE
+   control, so the accent border + soft ring go on the BOX around both — see the
+   input's :focus-visible below, which suppresses the second ring. */
+.ax-composer__box--focus {
+  border-color: var(--ax-accent);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+}
+
+/* Top half: the input, which grows with wrapping up to a cap, then scrolls. */
+.ax-composer__input {
+  width: 100%; box-sizing: border-box; resize: none;
+  /* Roughly matches the controls row below it initially; grows with wrapping. */
+  min-height: 42px; max-height: 200px;
+  background: transparent; color: var(--ax-text);
+  border: none; outline: none;
+  padding: 10px 12px 8px; font: inherit; line-height: 1.5;
+}
+.ax-composer__input:disabled { color: var(--ax-dim); }
+/* Deliberately ring-free: focusing the textarea already lights up the whole
+   composer box (--focus, above), which is applied on ANY focus including keyboard,
+   so it is the visible focus indicator. The global :focus-visible outline drew a
+   SECOND, hard blue rectangle around only the top half of the box — the doubled
+   border users reported — so it is suppressed here. Keep the box affordance if
+   you ever revisit this: removing both would break WCAG 2.4.7. */
+.ax-composer__input:focus-visible { outline: none; }
+
+/* A very light divider between the input and the controls. */
+.ax-composer__controls {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  /* Left padding matches the textarea's (12px) so the context label lines up
+     with the placeholder text above it, rather than sitting slightly further
+     left. The badge itself has no padding, so its text starts exactly here. */
+  padding: 5px 6px 5px 12px;
+  border-top: 1px solid var(--ax-border-subtle, rgba(0, 0, 0, 0.06));
+}
+
+/* Mode picker + send sit close together on the right. */
+.ax-composer__controls { justify-content: flex-end; }
+
+/* The page-context badge is an ambient status label pinned to the far left of
+   the row; margin-right:auto pushes the mode picker + send to the right edge.
+   min-width:0 lets its inner text ellipsize instead of widening the composer. */
+.ax-composer__context { margin-right: auto; min-width: 0; }
+
+.ax-send {
+  flex: none; width: 26px; height: 26px; padding: 0; display: grid; place-items: center;
+  background: var(--ax-accent); border: 1px solid var(--ax-accent); color: #fff;
+  border-radius: 7px; cursor: pointer; transition: background 0.12s, opacity 0.12s;
+}
+.ax-send svg { width: 14px; height: 14px; }
+.ax-send:hover:not(:disabled) { background: var(--ax-accent-deep); }
+.ax-send:disabled { opacity: 0.45; cursor: not-allowed; }
+.ax-send svg { display: block; }
+.ax-send--stop { background: var(--ax-err); border-color: var(--ax-err); }
+.ax-send--stop:hover { background: #b01722; }
+
+/* ---------- Mode picker (borderless; border only on hover; menu upward) ---------- */
+.ax-mode-picker { position: relative; }
+.ax-mode-picker__btn {
+  display: flex; align-items: center; gap: 3px;
+  padding: 3px 6px 3px 8px;
+  background: transparent; border: 1px solid transparent; border-radius: 7px;
+  font-size: 11px; font-weight: 400; color: var(--ax-text); cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.ax-mode-picker__btn:hover { background: var(--ax-bg-2); border-color: var(--ax-border); }
+.ax-mode-picker__caret { color: var(--ax-dim); transition: transform 0.15s; }
+.ax-mode-picker__caret--open { transform: rotate(180deg); }
+
+.ax-mode-menu {
+  position: absolute;
+  bottom: calc(100% + 6px); /* opens UPWARD — no room below inside the composer */
+  right: 0; /* anchor to the right edge — the picker sits near the panel's right */
+  min-width: 200px;
+  background: var(--ax-bg-1, #fff);
+  border: 1px solid var(--ax-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  z-index: 100;
+}
+.ax-mode-menu__item {
+  display: block; width: 100%; text-align: left;
+  background: transparent; border: none; border-radius: 7px;
+  padding: 7px 9px; cursor: pointer; transition: background 0.12s;
+}
+.ax-mode-menu__item:hover { background: var(--ax-bg-2); }
+.ax-mode-menu__item--active { background: var(--ax-bg-2); }
+.ax-mode-menu__row { display: flex; align-items: center; justify-content: space-between; }
+.ax-mode-menu__label { font-size: 12.5px; font-weight: 500; color: var(--ax-text); }
+.ax-mode-menu__check { color: var(--ax-accent); width: 13px; height: 13px; }
+.ax-mode-menu__hint { font-size: 11px; color: var(--ax-dim); margin-top: 1px; }

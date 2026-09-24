@@ -1,0 +1,4 @@
+After identifying the relevant data sources, review and extend the out-of-the-box supply chain 
+data model as needed. Build integration pipelines for each source to load and transform data into 
+the target tables. Once the data is loaded, create dashboard widgets to visualize and validate 
+the unified data.

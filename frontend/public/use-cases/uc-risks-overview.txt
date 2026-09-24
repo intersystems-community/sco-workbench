@@ -1,0 +1,1 @@
+Automatically detect supply chain risks using business-specific KPIs and rules, and visualize issues for monitoring and prioritization.

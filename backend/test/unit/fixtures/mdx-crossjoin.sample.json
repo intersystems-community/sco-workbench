@@ -1,0 +1,25 @@
+{
+  "Info": { "Error": "", "ColCount": 3, "RowCount": 4 },
+  "_comment": "Live-shape CROSSJOIN capture. composeMdx emits CROSSJOIN(rowSet=customer, seriesSet=year); IRIS returns each row tuple's Members in the REVERSE of the CROSSJOIN argument order, so Members = [yearMember, customerMember]. MemberInfo[] is positionally aligned to Members[] and its dimName names the owning dimension — the authoritative row-vs-series signal. Each Cell still corresponds to its tuple regardless of member order.",
+  "Result": {
+    "Axes": [
+      { "%ID": "Axis_1", "Tuples": [
+        { "%ID": "Tuple_1", "Members": [ { "Name": "Total Order Value" } ] },
+        { "%ID": "Tuple_2", "Members": [ { "Name": "%chartTotal" } ] },
+        { "%ID": "Tuple_3", "Members": [ { "Name": "%chartSeriesTotal" } ] }
+      ] },
+      { "%ID": "Axis_2", "Tuples": [
+        { "%ID": "Tuple_1", "Members": [ { "Name": "2024" }, { "Name": "Staples" } ], "MemberInfo": [ { "memberID": "M1", "dimName": "year", "levelName": "Year" }, { "memberID": "M2", "dimName": "customer", "levelName": "Customer" } ] },
+        { "%ID": "Tuple_2", "Members": [ { "Name": "2025" }, { "Name": "Staples" } ], "MemberInfo": [ { "memberID": "M3", "dimName": "year", "levelName": "Year" }, { "memberID": "M4", "dimName": "customer", "levelName": "Customer" } ] },
+        { "%ID": "Tuple_3", "Members": [ { "Name": "2024" }, { "Name": "Amazon" } ], "MemberInfo": [ { "memberID": "M5", "dimName": "year", "levelName": "Year" }, { "memberID": "M6", "dimName": "customer", "levelName": "Customer" } ] },
+        { "%ID": "Tuple_4", "Members": [ { "Name": "2025" }, { "Name": "Amazon" } ], "MemberInfo": [ { "memberID": "M7", "dimName": "year", "levelName": "Year" }, { "memberID": "M8", "dimName": "customer", "levelName": "Customer" } ] }
+      ] }
+    ],
+    "CellData": [
+      { "%ID": "Cell_1",  "ValueLogical": 100 }, { "%ID": "Cell_2",  "ValueLogical": 2 }, { "%ID": "Cell_3",  "ValueLogical": 2 },
+      { "%ID": "Cell_4",  "ValueLogical": 150 }, { "%ID": "Cell_5",  "ValueLogical": 2 }, { "%ID": "Cell_6",  "ValueLogical": 2 },
+      { "%ID": "Cell_7",  "ValueLogical": ""  }, { "%ID": "Cell_8",  "ValueLogical": 2 }, { "%ID": "Cell_9",  "ValueLogical": 2 },
+      { "%ID": "Cell_10", "ValueLogical": 300 }, { "%ID": "Cell_11", "ValueLogical": 2 }, { "%ID": "Cell_12", "ValueLogical": 2 }
+    ]
+  }
+}

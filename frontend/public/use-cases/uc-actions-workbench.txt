@@ -1,0 +1,5 @@
+Start with an existing supply chain issue in SCO, either automatically generated from KPI logic 
+or imported from an external system. Define a client-specific SOP for the risk category, and 
+use SCO to analyze the issue and supporting data to guide decisions. SCO also supports other 
+decision-support approaches, including scenario analysis and AI/ML. Once a decision is made, SCO 
+can assist with action execution, either automatically or with a human in the loop.

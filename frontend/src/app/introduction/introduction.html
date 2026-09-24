@@ -1,0 +1,154 @@
+<div class="gs-page">
+
+  <!-- Main scrollable content -->
+  <div class="gs-main">
+
+    <!-- ── 1. Intro ─────────────────────────────────────────── -->
+    <section class="gs-section gs-intro">
+      <div class="intro-body">
+        <div class="intro-text">
+          <app-page-header [level]="2" eyebrow="About the Platform" heading="InterSystems Supply Chain Orchestrator" />
+          <p class="intro-para">
+            <strong>InterSystems Supply Chain Orchestrator (SCO)</strong> is a supply chain decision intelligence platform built on the
+            InterSystems IRIS data platform. It unifies data across your entire supply chain ecosystem,
+            delivers end-to-end visibility, performs intelligent analysis, orchestrates business
+            processes, and assists decision making through data, analytics, and AI. SCO enables supply chain teams
+            to move from reactive firefighting to proactive, data-driven decision making.
+          </p>
+          <p class="intro-para">
+            <strong>SCO Workbench</strong> is a UI application which allows application builders to perform common
+            SCO tasks needed for your supply chain application, such as defining your data model, connecting data
+            sources, building KPIs and analytics cubes, identifying supply chain risks based on data and client specific logic, and 
+            visualize data and components built in a dashboard. Note that not all SCO features are exposed through SCO Workbench —
+            refer to the <a class="doc-link doc-link--inline" href="https://docs.intersystems.com/supplychain20261/csp/docbook/DocBook.UI.Page.cls" target="_blank" rel="noopener">product documentation
+              <svg class="ext-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1h4v4M11 1L5 7M2 4H1v7h7V8"/></svg>
+            </a> for the full capabilities of SCO.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 2. Use Cases ─────────────────────────────────────── -->
+    <section class="gs-section">
+      <app-page-header [level]="2" eyebrow="What You Can Do" heading="Common SCO Use Cases" />
+      <p class="section-sub">
+        Click any use case to learn how SCO Workbench helps you implement it.
+        <a class="doc-link doc-link--inline" href="https://www.intersystems.com/resources/intersystems-supply-chain-solution-suite/" target="_blank" rel="noopener">
+          Learn more about SCO use cases
+          <svg class="ext-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M7 1h4v4M11 1L5 7M2 4H1v7h7V8"/>
+          </svg>
+        </a>
+      </p>
+      <div class="uc-grid">
+        <div
+          *ngFor="let uc of useCases"
+          class="uc-card"
+          [attr.data-title]="uc.title"
+          (click)="openUseCase(uc)"
+        >
+          <span class="uc-icon">{{ uc.icon }}</span>
+          <span class="uc-title">{{ uc.title }}</span>
+          <span class="uc-arrow">→</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 3. Get Started ────────────────────────────────────── -->
+    <section class="gs-section">
+      <app-page-header [level]="2" eyebrow="Get Started" heading="How to Use SCO Workbench" />
+      <div class="gs-prereqs">
+        <div class="gs-prereq-label">Prerequisites</div>
+        <div class="gs-prereq-item">
+          <span class="gs-prereq-num">1</span>
+          <span>A running SCO instance (e.g. SCO Community Edition).</span>
+        </div>
+        <div class="gs-prereq-item">
+          <span class="gs-prereq-num">2</span>
+          <span>An LLM is configured for this SCO Workbench instance. See project README file for more details.
+          </span>
+        </div>
+      </div>
+
+      <p class="section-sub">Choose the approach that fits how you work best.</p>
+
+      <div class="gs-paths">
+
+        <div class="gs-path-card">
+          <div class="gs-path-header">
+            <span class="gs-path-icon">🗺️</span>
+            <h3 class="gs-path-title">Explore &amp; Build</h3>
+          </div>
+          <p class="gs-path-desc">
+            Browse each section in the left navigation — Data Model, Integrations, KPIs, Cubes,
+            issues — and work through them at your own pace. Each area guides you
+            through the configuration needed to build up your supply chain use case step by step.
+          </p>
+        </div>
+
+        <div class="gs-path-card gs-path-card--ai">
+          <div class="gs-path-header">
+            <span class="gs-path-icon">✦</span>
+            <h3 class="gs-path-title">Start with a Goal</h3>
+          </div>
+          <p class="gs-path-desc">
+            Describe what you want to achieve — for example, <em>"I want to track expired inventory by location"</em> — and ask the AI Assistant to break it down into actionable
+            workbench steps. This top-down approach is ideal when you have a business outcome in
+            mind but aren't sure where to begin.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="gs-tip">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" class="gs-tip-icon">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M8 7v4M8 5.5v.5"/>
+        </svg>
+        <span>
+          The AI Assistant is available on every page. It may not be open by default — click the
+          floating icon at the bottom-right corner of any page to open it.
+        </span>
+      </div>
+    </section>
+
+  </div>
+
+</div>
+
+<!-- ── Use-case modal ───────────────────────────────────── -->
+<div class="modal-backdrop" *ngIf="selectedUseCase" (click)="closeUseCase()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-icon">{{ selectedUseCase.icon }}</span>
+      <h3 class="modal-title">{{ selectedUseCase.title }}</h3>
+      <button class="modal-close" (click)="closeUseCase()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M2 2l10 10M12 2L2 12"/>
+        </svg>
+      </button>
+    </div>
+
+      <div class="modal-section-label">Overview</div>
+      <p class="modal-body">{{ ucTexts[selectedUseCase.id]?.overview }}</p>
+
+      <div class="modal-divider"></div>
+
+      <div class="modal-section-label">How to implement with SCO Workbench</div>
+      <p class="modal-body">{{ ucTexts[selectedUseCase.id]?.workbench }}</p>
+
+      <!-- Workbench modules -->
+      <div class="modal-divider"></div>
+      <div class="modal-section-label">Workbench Areas</div>
+      <div class="modal-modules">
+        <span *ngFor="let m of selectedUseCase.modules" class="modal-module-chip" [class.modal-module-chip--soon]="m.soon">
+          {{ m.label }}<sup *ngIf="m.soon">*</sup>
+        </span>
+      </div>
+      <p *ngIf="hasSoonModule(selectedUseCase)" class="modal-modules-footnote">* Coming soon — not fully implemented in the current release of SCO Workbench.</p>
+  </div>
+</div>

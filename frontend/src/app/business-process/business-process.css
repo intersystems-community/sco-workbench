@@ -1,0 +1,25 @@
+/* Business Process is a documentation-only view — shares the feature-info style. */
+@import '../shared/feature-info.css';
+
+/* Issue analysis section */
+.bp-text { font-size: 13px; line-height: 1.7; color: #3a3a3c; margin: 0 0 16px; }
+.bp-subtitle { font-size: 13px; font-weight: 600; color: #1d1d1f; margin: 20px 0 10px; }
+
+/* SOP examples */
+.bp-examples { display: flex; flex-direction: column; gap: 12px; }
+.bp-example { background: #fff; border: 1px solid #e3e6ea; border-radius: 12px; padding: 16px; }
+.bp-example__title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.bp-example__label { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #0066cc; margin-bottom: 2px; }
+.bp-example__sop { font-size: 13px; line-height: 1.5; color: #3a3a3c; font-style: italic; margin: 0 0 10px; }
+.bp-example__result { font-size: 13px; line-height: 1.5; color: #3a3a3c; margin: 0; }
+
+/* Issue lifecycle */
+.bp-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.bp-step { display: flex; gap: 12px; background: #fff; border: 1px solid #e3e6ea; border-radius: 12px; padding: 14px 16px; }
+.bp-step__num { flex: none; width: 24px; height: 24px; border-radius: 50%; background: #0066cc; color: #fff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.bp-step__title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.bp-step__desc { font-size: 13px; line-height: 1.5; color: #656d76; margin: 0; }
+
+/* Four cards as 2×2; long class names wrap inside the card. */
+.fi-cards { grid-template-columns: repeat(2, 1fr); }
+.fi-card__desc { overflow-wrap: anywhere; }

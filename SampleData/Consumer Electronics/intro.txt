@@ -1,0 +1,5 @@
+A worked example of a consumer-electronics supply chain, followed end to end: the finished products and the parts they are built from, the plants, warehouses, suppliers and customers involved.
+
+18 products — phone models and the components that go into them, from CPUs and memory chips to touch screens and batteries — bought from 10 suppliers, made and held at two plants and two warehouses, and sold on to 13 customers: telecom operators, retailers and an online store, across 27 sites in a dozen countries. Around that sits the day-to-day work: a weekly demand plan, what is on hand at each site and the stock levels it is meant to hold, purchase orders with the inbound shipments that fill them, and sales orders with the outbound shipments that deliver them, moved by UPS, FedEx and DHL.
+
+16 files, about 16,350 rows in all — a few seconds to load, and enough to build a data model, KPIs, cubes and dashboards on and watch them come back with something to say.

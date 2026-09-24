@@ -1,0 +1,14 @@
+ID,Name,Type,Status,primaryLocationId
+CUST002,Best Buy ,retailer,Active,LOC-CUST-1
+CUST004,Staples,retailer,Active,LOC-CUST-2
+CUST005,Amazon,ecommerce,Active,LOC-CUST-3
+CUST006,AT&T,telecom,Active,LOC-CUST-4
+CUST007,Nippon Telegraph & Telephone Corp.,telecom,Active,LOC-CUST-5
+CUST008,Deutsche Telekom AG,telecom,Active,LOC-CUST-6
+CUST009,"Telefónica, S.A.",telecom,Active,LOC-CUST-7
+CUST010,América Móvil,telecom,Active,LOC-CUST-8
+CUST011,Oi,telecom,Active,LOC-CUST-9
+CUST012,MTN Group,telecom,Active,LOC-CUST-10
+CUST013,China Telecom,telecom,Active,LOC-CUST-11
+CUST014,China Unicom,telecom,Active,LOC-CUST-12
+CUST015,China Mobile,telecom,Active,LOC-CUST-13

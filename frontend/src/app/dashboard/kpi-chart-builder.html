@@ -1,0 +1,56 @@
+<section class="kcb">
+  <div class="kcb__controls">
+    <div class="db-builder-section">
+      <!-- The section title IS the control's label (SC-2665 label-collapse): the picker's
+           accessible name comes from aria-labelledby → the title word, so no visible label is
+           repeated above the select. -->
+      <div class="db-builder-section-title"><span id="kcb-kpi-label">KPI</span>
+        <span class="db-builder-section-hint" id="kcb-kpi-hint">The metric this tile charts.</span></div>
+      @if (kpis().length === 0 && !loadingKpis()) {
+        <p class="kcb__empty" data-testid="no-chartable-kpis">
+          No chartable KPIs. A KPI must be cube-backed (a DeepSee KPI) to chart.
+        </p>
+      } @else {
+        <div class="kcb__field">
+          <select class="db-builder-control" data-testid="kpi-select"
+                  aria-labelledby="kcb-kpi-label" aria-describedby="kcb-kpi-hint"
+                  (change)="onKpiChange($any($event.target).value)">
+            <option value="" disabled [selected]="selectedKpi() === null">Select a KPI…</option>
+            @for (k of kpis(); track k.name) {
+              <option [value]="k.name" [selected]="k.name === selectedKpi()">{{ k.label }}</option>
+            }
+          </select>
+        </div>
+      }
+      @if (loadingKpis()) {
+        <span class="db-builder-note" data-testid="kpi-loading" role="status">Loading KPIs…</span>
+      }
+    </div>
+
+    @if (selectedKpi()) {
+      <div class="db-builder-section">
+        <div class="db-builder-section-title"><span id="kcb-breakdown-label">Break down by</span>
+          <span class="db-builder-section-hint" id="kcb-breakdown-hint">Split the value across a dimension, or leave it for a single number.</span></div>
+        <div class="kcb__field">
+          <select class="db-builder-control" data-testid="expand-dim-select"
+                  aria-labelledby="kcb-breakdown-label" aria-describedby="kcb-breakdown-hint"
+                  (change)="onExpandDimensionChange($any($event.target).value)">
+            <option value="" [selected]="expandDimension() === null">(single value)</option>
+            @for (d of selectedKpiDims(); track d.name) {
+              <option [value]="d.name" [selected]="d.name === expandDimension()">{{ d.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (baseSelection()) {
+    <app-chart-builder-preview
+      [baseSelection]="baseSelection()" [allowedTypes]="allowedTypes()"
+      [seedType]="seedType()" [seedUseAi]="seedUseAi()"
+      (draftChange)="onDraftChange($event)" />
+  } @else {
+    <p class="kcb__empty">Pick a KPI to chart its value.</p>
+  }
+</section>

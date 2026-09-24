@@ -1,0 +1,182 @@
+<div class="ax-panel">
+  <!-- Session history popover (compact overlay; does NOT replace the transcript) -->
+  <div class="ax-history-pop" *ngIf="showHistory()">
+    <div class="ax-history-pop__search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input
+        class="ax-history-pop__input"
+        type="text"
+        placeholder="Search sessions…"
+        [(ngModel)]="historyFilter"
+        name="historyFilter"
+      />
+    </div>
+    <div class="ax-history-pop__list">
+      <div
+        *ngFor="let s of filteredSessions()"
+        class="ax-history-pop__item"
+        [class.active]="s.id === currentSessionId"
+        (click)="openSession(s.id)"
+        role="button"
+        tabindex="0"
+      >
+        <span class="ax-history-pop__title">{{ s.title || 'Untitled' }}</span>
+        <!-- A session still streaming in the background shows a spinner so the
+             user knows a run is in flight elsewhere. -->
+        <span class="ax-history-pop__run" *ngIf="isSessionRunning(s.id)" title="Running…" aria-label="Running">
+          <span class="ax-run-dot"></span>
+        </span>
+        <!-- Delete this session — revealed on row hover; stops the row's open click. -->
+        <button
+          type="button"
+          class="ax-history-pop__delete"
+          (click)="deleteSession(s.id, $event)"
+          title="Delete session"
+          aria-label="Delete session"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+      <div class="ax-history-pop__empty" *ngIf="filteredSessions().length === 0">No sessions found.</div>
+    </div>
+  </div>
+
+  <!-- Transcript -->
+  <div class="ax-messages" #messages (scroll)="onScroll()">
+    <div class="ax-empty" *ngIf="isEmpty()">
+      <h2 class="ax-empty__greeting">{{ greeting }}</h2>
+    </div>
+
+    <div *ngFor="let turn of turns()" class="ax-msg" [class.ax-msg--user]="turn.role === 'user'" [class.ax-msg--ai]="turn.role === 'assistant'">
+      <!-- User bubble -->
+      <div class="ax-msg__body" *ngIf="turn.role === 'user'">{{ turn.text }}</div>
+
+      <!-- Assistant timeline -->
+      <div class="ax-turn" *ngIf="turn.role === 'assistant'">
+        <ng-container *ngFor="let item of turn.items">
+          <!-- Text / result -->
+          <div class="ax-item" *ngIf="item.kind === 'text'">
+            <span class="ax-dot" [class.ax-dot--ok]="item.dot === 'ok'" [class.ax-dot--muted]="item.dot === 'muted'"></span>
+            <div class="ax-text markdown" [innerHTML]="item.raw | markdown"></div>
+          </div>
+
+          <!-- Tool / skill step -->
+          <div class="ax-item ax-step" *ngIf="item.kind === 'step'" [class.error]="item.status === 'error'">
+            <span
+              class="ax-dot"
+              [class.ax-dot--run]="item.status === 'running'"
+              [class.ax-dot--ok]="item.status === 'done'"
+              [class.ax-dot--err]="item.status === 'error'"
+            ></span>
+            <div class="ax-step__main">
+              <div class="ax-step__row">
+                <span class="ax-step__label">{{ item.label }}</span>
+                <span class="ax-step__summary" *ngIf="item.summary">{{ item.summary }}</span>
+              </div>
+              <button class="ax-step__toggle" type="button" *ngIf="stepHasDetails(item)" (click)="toggleStep(item)">
+                <span class="ax-step__chevron">{{ item.expanded ? '▾' : '▸' }}</span>
+                <code class="ax-step__toolname">{{ item.toolName }}</code>
+              </button>
+              <div class="ax-step__body" *ngIf="item.expanded">
+                <div class="ax-section" *ngIf="item.input">
+                  <div class="ax-section__label">Input</div>
+                  <pre class="ax-section__pre">{{ prettyInput(item.input) }}</pre>
+                </div>
+                <div class="ax-section" *ngIf="item.output">
+                  <div class="ax-section__label">Output</div>
+                  <pre class="ax-section__pre">{{ item.output }}</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Note (e.g. Stopped.) -->
+          <div class="ax-item" *ngIf="item.kind === 'note'">
+            <span class="ax-dot ax-dot--muted"></span>
+            <div class="ax-text ax-note">{{ item.text }}</div>
+          </div>
+
+          <!-- Error row -->
+          <div class="ax-item ax-step error" *ngIf="item.kind === 'error'">
+            <span class="ax-dot ax-dot--err"></span>
+            <div class="ax-step__main"><div class="ax-step__row"><span class="ax-step__label">{{ item.text }}</span></div></div>
+          </div>
+        </ng-container>
+
+        <!-- Working indicator (spinning mark + cycling word) -->
+        <div class="ax-item ax-thinking" *ngIf="turn.thinking">
+          <span class="ax-spinner" aria-hidden="true">◈</span>
+          <span class="ax-thinking__word">{{ thinkingWord() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline confirm / ask overlays — rest just above the composer (out of the
+       scrolling transcript) so they don't float in the middle of the panel. -->
+  <div class="ax-overlay" *ngIf="confirmReq() as c">
+    <app-confirm-card [req]="c" (decision)="onConfirm($event)"></app-confirm-card>
+  </div>
+  <div class="ax-overlay" *ngIf="askReq() as a">
+    <app-ask-card [req]="a" (answered)="onAnswered($event)" (cancelled)="onAskCancelled()"></app-ask-card>
+  </div>
+
+  <!-- Composer: one container — input area on top, a light divider, then the
+       controls row (mode picker + send). -->
+  <form class="ax-composer" (submit)="$event.preventDefault(); send()">
+    <div class="ax-composer__box" [class.ax-composer__box--focus]="composerFocused">
+      <textarea
+        #inputEl
+        class="ax-composer__input"
+        rows="1"
+        [placeholder]="composerPlaceholder"
+        [disabled]="streaming() || !aiEnabled"
+        [attr.title]="aiEnabled ? null : 'The AI assistant needs a Claude provider configured on the server (see CLAUDE_PROVIDER in .env)'"
+        [(ngModel)]="input"
+        name="assistantInput"
+        (input)="autoGrow(inputEl)"
+        (focus)="composerFocused = true"
+        (blur)="composerFocused = false"
+        (keydown)="onInputKey($event)"
+      ></textarea>
+
+      <!-- Controls row: context badge (far left) + mode picker + send (right). -->
+      <div class="ax-composer__controls">
+        <app-context-badge class="ax-composer__context" [label]="contextLabel()"></app-context-badge>
+        <div class="ax-mode-picker">
+          <button class="ax-mode-picker__btn" type="button" (click)="toggleModeMenu()" [attr.aria-expanded]="modeMenuOpen()">
+            <span class="ax-mode-picker__label">{{ modeLabel() }}</span>
+            <svg class="ax-mode-picker__caret" [class.ax-mode-picker__caret--open]="modeMenuOpen()" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <!-- Menu opens UPWARD (there's no space below inside the composer). -->
+          <div class="ax-mode-menu" *ngIf="modeMenuOpen()">
+            <button
+              *ngFor="let opt of modeOptions"
+              type="button"
+              class="ax-mode-menu__item"
+              [class.ax-mode-menu__item--active]="opt.value === mode()"
+              (click)="selectMode(opt.value)"
+            >
+              <div class="ax-mode-menu__row">
+                <span class="ax-mode-menu__label">{{ opt.label }}</span>
+                <svg *ngIf="opt.value === mode()" class="ax-mode-menu__check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="ax-mode-menu__hint">{{ opt.hint }}</div>
+            </button>
+          </div>
+        </div>
+
+        <button
+          class="ax-send"
+          [class.ax-send--stop]="streaming()"
+          type="submit"
+          [disabled]="!aiEnabled || (!streaming() && !input.trim())"
+          [title]="!aiEnabled ? 'Claude key not provided' : (streaming() ? 'Stop' : 'Send')"
+        >
+          <svg *ngIf="!streaming()" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+          <svg *ngIf="streaming()" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CubeQueryRunner — compose + normalize > a well-formed spec composes MDX (snapshot) and normalizes cells to ChartData 1`] = `"WITH MEMBER [Measures].[%chartTotal] AS '%DISTINCT([region].[H1].[Region].MEMBERS)' SELECT {[Measures].[Revenue],[Measures].[%chartTotal]} ON 0,TOPCOUNT([region].[H1].[Region].MEMBERS,50,[Measures].[Revenue]) ON 1 FROM [SalesCube]"`;
+
+exports[`CubeQueryRunner — crossjoin (second-dimension split, honest homogeneous series) > composes a CROSSJOIN MDX with the single measure ON 0 (snapshot) and validated identifiers only 1`] = `"WITH MEMBER [Measures].[%chartTotal] AS '%DISTINCT([customer].[H1].[Customer].MEMBERS)' MEMBER [Measures].[%chartSeriesTotal] AS '%DISTINCT([year].[H1].[Year].MEMBERS)' SELECT {[Measures].[Revenue],[Measures].[%chartTotal],[Measures].[%chartSeriesTotal]} ON 0,NON EMPTY CROSSJOIN(TOPCOUNT([customer].[H1].[Customer].MEMBERS,50,[Measures].[Revenue]),TOPCOUNT([year].[H1].[Year].MEMBERS,8,[Measures].[Revenue])) ON 1 FROM [SalesCube]"`;
+
+exports[`CubeQueryRunner — filters (#3): a validated WHERE slicer > appends a single-member WHERE slicer built from the filter's resolved (first) level spec (snapshot) 1`] = `"WITH MEMBER [Measures].[%chartTotal] AS '%DISTINCT([region].[H1].[Region].MEMBERS)' SELECT {[Measures].[Revenue],[Measures].[%chartTotal]} ON 0,TOPCOUNT([region].[H1].[Region].MEMBERS,50,[Measures].[Revenue]) ON 1 FROM [SalesCube] WHERE ([year].[H1].[Year].[2024])"`;
+
+exports[`CubeQueryRunner — multiple measures on the no-split path (#1) > composes both measures ON 0 (snapshot) and returns two series 1`] = `"WITH MEMBER [Measures].[%chartTotal] AS '%DISTINCT([region].[H1].[Region].MEMBERS)' SELECT {[Measures].[availableQuantity],[Measures].[totalQuantity],[Measures].[%chartTotal]} ON 0,TOPCOUNT([region].[H1].[Region].MEMBERS,50,[Measures].[availableQuantity]) ON 1 FROM [ProductInventoryCube]"`;

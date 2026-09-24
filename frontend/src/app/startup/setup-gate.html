@@ -1,0 +1,65 @@
+<div class="gate" data-testid="setup-gate">
+  <div class="gate-card">
+
+    <header class="gate-head">
+      <div class="gate-brand">SCO Workbench</div>
+      <span class="gate-badge" data-testid="gate-prerequisite">{{ guidance.prerequisite }}</span>
+    </header>
+
+    <h1 class="gate-title" data-testid="gate-title">{{ guidance.title }}</h1>
+    <p class="gate-explanation" data-testid="gate-explanation">{{ guidance.explanation }}</p>
+
+    <!-- The three prerequisites, in the order the probe establishes them. Seeing
+         which ones passed narrows the problem before reading a single step. -->
+    <ul class="gate-checks" data-testid="gate-checks">
+      <li *ngFor="let c of checks" class="gate-check gate-check--{{ c.state }}">
+        <span class="gate-check__mark" aria-hidden="true">{{ c.state === 'pass' ? '✓' : c.state === 'fail' ? '✕' : '–' }}</span>
+        <span class="gate-check__label">{{ c.label }}</span>
+        <span class="gate-check__note">{{ c.note }}</span>
+      </li>
+    </ul>
+
+    <section class="gate-steps-wrap">
+      <h2 class="gate-steps-title">Try this</h2>
+      <ol class="gate-steps" data-testid="gate-steps">
+        <li *ngFor="let s of guidance.steps">{{ s }}</li>
+      </ol>
+    </section>
+
+    <!-- What we actually probed and what came back. Kept visually quiet but always
+         present: it is what the user pastes into a support ticket. Never contains
+         credentials — the backend builds it from the endpoint and status only. -->
+    <details class="gate-detail" data-testid="gate-detail">
+      <summary>Technical detail</summary>
+      <dl class="gate-detail__list">
+        <ng-container *ngIf="result.endpoint">
+          <dt>Checked</dt><dd class="mono">{{ result.endpoint }}</dd>
+        </ng-container>
+        <ng-container *ngIf="result.namespace">
+          <dt>Namespace</dt><dd class="mono">{{ result.namespace }}</dd>
+        </ng-container>
+        <ng-container *ngIf="result.user">
+          <dt>User</dt><dd class="mono">{{ result.user }}</dd>
+        </ng-container>
+        <ng-container *ngIf="result.version">
+          <dt>Reported version</dt><dd class="mono">{{ result.version }}</dd>
+        </ng-container>
+        <ng-container *ngIf="result.minimumVersion">
+          <dt>Minimum required</dt><dd class="mono">{{ result.minimumVersion }}</dd>
+        </ng-container>
+        <ng-container *ngIf="result.detail">
+          <dt>Result</dt><dd class="mono">{{ result.detail }}</dd>
+        </ng-container>
+      </dl>
+    </details>
+
+    <footer class="gate-actions">
+      <button class="gate-btn" type="button" (click)="retry()" [disabled]="retrying" data-testid="gate-retry">
+        <span class="gate-spinner" *ngIf="retrying" aria-hidden="true"></span>
+        {{ retrying ? 'Checking…' : 'Retry' }}
+      </button>
+      <span class="gate-hint">Fix the above, then retry. No restart needed.</span>
+    </footer>
+
+  </div>
+</div>

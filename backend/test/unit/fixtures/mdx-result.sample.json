@@ -1,0 +1,238 @@
+{
+    "Info": {
+        "Error": "",
+        "TimeStamp": "2026-08-20 19:08:47",
+        "ResultsComplete": 1,
+        "PendingResults": 0,
+        "MDXText": "WITH MEMBER [MEASURES].[%chartTotal] AS '%DISTINCT([CUSTOMER].[H1].[NAME].MEMBERS)' SELECT {[MEASURES].[TOTALORDERVALUE],[MEASURES].[%chartTotal]} ON 0,TOPCOUNT([CUSTOMER].[H1].[NAME].MEMBERS,3,[MEASURES].[TOTALORDERVALUE]) ON 1 FROM [SALESORDERCUBE]",
+        "QueryKey": "en1613572108",
+        "CubeKey": "SALESORDERCUBE",
+        "QueryID": "SALESORDERCUBE||en1613572108",
+        "Cube": "SalesOrderCube",
+        "Pivot": "",
+        "QueryType": "SELECT",
+        "ListingSource": "",
+        "ColCount": 2,
+        "RowCount": 3
+    },
+    "AxesInfo": [
+        {
+            "%ID": "SlicerInfo",
+            "Text": ""
+        },
+        {
+            "%ID": "AxisInfo_1",
+            "Text": "{[MEASURES].[TOTALORDERVALUE],[MEASURES].[%chartTotal]}"
+        },
+        {
+            "%ID": "AxisInfo_2",
+            "Text": "TOPCOUNT([CUSTOMER].[H1].[NAME].MEMBERS,3,[MEASURES].[TOTALORDERVALUE])"
+        }
+    ],
+    "Result": {
+        "Axes": [
+            {
+                "%ID": "Axis_1",
+                "Tuples": [
+                    {
+                        "%ID": "Tuple_1",
+                        "Members": [
+                            {
+                                "%ID": "Member_1",
+                                "Name": "Total Order Value"
+                            }
+                        ],
+                        "MemberInfo": [
+                            {
+                                "%ID": "MemberInfo_1",
+                                "nodeNo": 3,
+                                "text": "Total Order Value",
+                                "dimName": "Measures",
+                                "hierName": "totalOrderValue",
+                                "levelName": "",
+                                "memberKey": "",
+                                "dimNo": 0,
+                                "hierNo": 2,
+                                "levelNo": 0,
+                                "aggregate": "",
+                                "orSpec": ""
+                            }
+                        ]
+                    },
+                    {
+                        "%ID": "Tuple_2",
+                        "Members": [
+                            {
+                                "%ID": "Member_1",
+                                "Name": "%chartTotal"
+                            }
+                        ],
+                        "MemberInfo": [
+                            {
+                                "%ID": "MemberInfo_1",
+                                "nodeNo": 4,
+                                "text": "%chartTotal",
+                                "dimName": "",
+                                "hierName": "%DISTINCT",
+                                "levelName": "",
+                                "memberKey": "",
+                                "dimNo": "",
+                                "hierNo": "",
+                                "levelNo": "",
+                                "aggregate": "",
+                                "orSpec": ""
+                            }
+                        ]
+                    }
+                ],
+                "TupleInfo": [
+                    {
+                        "%ID": "TupleInfo_1",
+                        "Error": "",
+                        "childSpec": ""
+                    },
+                    {
+                        "%ID": "TupleInfo_2",
+                        "Error": "",
+                        "childSpec": ""
+                    }
+                ]
+            },
+            {
+                "%ID": "Axis_2",
+                "Tuples": [
+                    {
+                        "%ID": "Tuple_1",
+                        "Members": [
+                            {
+                                "%ID": "Member_1",
+                                "Name": "Staples"
+                            }
+                        ],
+                        "MemberInfo": [
+                            {
+                                "%ID": "MemberInfo_1",
+                                "nodeNo": 18,
+                                "text": "Staples",
+                                "dimName": "customer",
+                                "hierName": "H1",
+                                "levelName": "name",
+                                "memberKey": "Staples",
+                                "dimNo": 5,
+                                "hierNo": 1,
+                                "levelNo": 2,
+                                "aggregate": "",
+                                "orSpec": ""
+                            }
+                        ]
+                    },
+                    {
+                        "%ID": "Tuple_2",
+                        "Members": [
+                            {
+                                "%ID": "Member_1",
+                                "Name": "MTN Group"
+                            }
+                        ],
+                        "MemberInfo": [
+                            {
+                                "%ID": "MemberInfo_1",
+                                "nodeNo": 19,
+                                "text": "MTN Group",
+                                "dimName": "customer",
+                                "hierName": "H1",
+                                "levelName": "name",
+                                "memberKey": "MTN Group",
+                                "dimNo": 5,
+                                "hierNo": 1,
+                                "levelNo": 2,
+                                "aggregate": "",
+                                "orSpec": ""
+                            }
+                        ]
+                    },
+                    {
+                        "%ID": "Tuple_3",
+                        "Members": [
+                            {
+                                "%ID": "Member_1",
+                                "Name": "Amazon"
+                            }
+                        ],
+                        "MemberInfo": [
+                            {
+                                "%ID": "MemberInfo_1",
+                                "nodeNo": 20,
+                                "text": "Amazon",
+                                "dimName": "customer",
+                                "hierName": "H1",
+                                "levelName": "name",
+                                "memberKey": "Amazon",
+                                "dimNo": 5,
+                                "hierNo": 1,
+                                "levelNo": 2,
+                                "aggregate": "",
+                                "orSpec": ""
+                            }
+                        ]
+                    }
+                ],
+                "TupleInfo": [
+                    {
+                        "%ID": "TupleInfo_1",
+                        "Error": "",
+                        "childSpec": ""
+                    },
+                    {
+                        "%ID": "TupleInfo_2",
+                        "Error": "",
+                        "childSpec": ""
+                    },
+                    {
+                        "%ID": "TupleInfo_3",
+                        "Error": "",
+                        "childSpec": ""
+                    }
+                ]
+            }
+        ],
+        "CellData": [
+            {
+                "%ID": "Cell_1",
+                "ValueLogical": 51075000,
+                "Format": "#,###.##",
+                "ValueFormatted": "51,075,000.00"
+            },
+            {
+                "%ID": "Cell_2",
+                "ValueLogical": 13,
+                "Format": "",
+                "ValueFormatted": "13"
+            },
+            {
+                "%ID": "Cell_3",
+                "ValueLogical": 49898000,
+                "Format": "#,###.##",
+                "ValueFormatted": "49,898,000.00"
+            },
+            {
+                "%ID": "Cell_4",
+                "ValueLogical": 13,
+                "Format": "",
+                "ValueFormatted": "13"
+            },
+            {
+                "%ID": "Cell_5",
+                "ValueLogical": 44485000,
+                "Format": "#,###.##",
+                "ValueFormatted": "44,485,000.00"
+            },
+            {
+                "%ID": "Cell_6",
+                "ValueLogical": 13,
+                "Format": "",
+                "ValueFormatted": "13"
+            }
+        ]
+    }
+}

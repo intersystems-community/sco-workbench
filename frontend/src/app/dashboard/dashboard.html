@@ -1,0 +1,52 @@
+<div class="db page--full">
+  <div class="db__toolbar">
+    <button class="db__btn" type="button" data-testid="db-add" (click)="openAdd()">+ Add tile</button>
+    <span class="db__spacer"></span>
+    <!-- Autosave (spec §12): layout changes persist immediately, so there is no
+         Save/Discard button. The status line below announces each save quietly. -->
+  </div>
+
+  <!-- Present from first render (empty) so a screen reader announces later writes
+       (Saving… / All changes saved / Couldn't save — retrying). -->
+  <p class="db__status" data-testid="db-status" aria-live="polite">{{ status() }}</p>
+
+  @if (loadError()) {
+    <div class="db__load-error" data-testid="db-load-error" role="alert">
+      <span>{{ loadError() }}</span>
+      <button class="db__btn" type="button" data-testid="db-load-retry" (click)="retryLoad()">Retry</button>
+    </div>
+  }
+
+  <div class="db__body">
+    @if (config().tiles.length === 0) {
+      <div class="db__empty" data-testid="db-empty">
+        <p class="db__empty-title">Your dashboard is empty.</p>
+        <p class="db__empty-hint">Add a table or chart tile to get started.</p>
+        <button class="db__btn db__btn--primary" type="button" (click)="openAdd()">+ Add tile</button>
+      </div>
+    } @else {
+      <app-dashboard-grid
+        [config]="config()"
+        (tileEdit)="onTileEdit($event)"
+        (tileDelete)="onTileDelete($event)"
+        (tileResize)="onTileResize($event)"
+        (tileMove)="onTileMove($event)"
+        (tileMoveTo)="onTileMoveTo($event)"
+        (tileExpand)="onTileExpand($event)" />
+    }
+  </div>
+
+  <app-tile-editor
+    [open]="editorRequest()"
+    (save)="onEditorSave($event)"
+    (cancel)="onEditorCancel()" />
+
+  <app-confirm-dialog
+    [open]="confirmRequest()"
+    (confirm)="onDeleteConfirm()"
+    (cancel)="onDeleteCancel()" />
+
+  <app-tile-overlay
+    [open]="expanded()"
+    (close)="onOverlayClose()" />
+</div>

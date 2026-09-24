@@ -1,0 +1,13 @@
+/* frontend/src/app/dashboard/kpi-chart-builder.css
+   The KPI chart builder's pickers (KPI + break-down), ported from chart-builder.css,
+   `.cb__*` renamed to `.kcb__*`. Type dropdown + preview live in the shared preview child. */
+.kcb { display: flex; flex-direction: column; gap: 12px; }
+.kcb__controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+/* The picker wrapper: the section title (.db-builder-section-title) IS the label now, so the
+   field carries no repeated label span (SC-2665 label-collapse). */
+.kcb__field { display: flex; flex-direction: column; gap: 4px; }
+.kcb__empty { font-size: 13px; color: var(--db-text-secondary); margin: 0; }
+
+@media (max-width: 640px) {
+  .kcb__controls { flex-direction: column; align-items: stretch; }
+}

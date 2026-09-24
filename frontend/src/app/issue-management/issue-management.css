@@ -1,0 +1,553 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.im-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Left nav ─────────────────────────────────────────── */
+
+.im-nav {
+  width: 248px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #e8e8ed;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+}
+
+.im-nav-header {
+  padding: 16px 16px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #8e8e93;
+  text-transform: uppercase;
+}
+
+.im-nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.im-nav-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.im-nav-group-btn:hover {
+  background: #f5f5f7;
+}
+
+.im-nav-chevron {
+  flex-shrink: 0;
+  color: #c0c0c5;
+  transition: transform 0.15s ease;
+}
+
+.im-nav-chevron--open {
+  transform: rotate(90deg);
+}
+
+.im-nav-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: 0.01em;
+}
+
+.im-nav-group-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.im-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 16px 5px 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.im-nav-item:hover {
+  background: #f5f5f7;
+}
+
+.im-nav-item--active {
+  background: #edf2ff;
+}
+
+.im-nav-item--active:hover {
+  background: #e2ebff;
+}
+
+.im-nav-item-label {
+  font-size: 13px;
+  color: #3a3a3c;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.im-nav-item--active .im-nav-item-label {
+  color: #0055b3;
+  font-weight: 500;
+}
+
+.im-nav-item-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8e8e93;
+  background: #f0f0f5;
+  padding: 1px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.im-nav-item--active .im-nav-item-count {
+  background: #d4e4ff;
+  color: #0055b3;
+}
+
+/* ── Right content ────────────────────────────────────── */
+
+.im-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: #f2f2f7;
+}
+
+/* ── Shared ───────────────────────────────────────────── */
+
+.im-rule {
+  border: none;
+  border-top: 1px solid #e8e8ed;
+  margin: 0;
+}
+
+.im-section-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #8e8e93;
+}
+
+/* ── Badges (severity / urgency) ──────────────────────── */
+
+.im-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.im-badge--high   { background: #ffe5e5; color: #b91c1c; }
+.im-badge--medium { background: #fff3e0; color: #c0620a; }
+.im-badge--low    { background: #e6f4ea; color: #1a7a3f; }
+/* SCO leaves severity/urgency unset until an analysis process assigns them. */
+.im-badge--none   { background: #f2f2f7; color: #8e8e93; }
+
+/* ── Status chips ─────────────────────────────────────── */
+
+.im-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* SCO's three statuses (SC.Core.Data.Internal.Issue): open, workflow, closed. */
+.im-status--open        { background: #e8f0ff; color: #0055b3; }
+.im-status--workflow    { background: #f3e8ff; color: #6d28d9; }
+.im-status--closed      { background: #e6f4ea; color: #1a7a3f; }
+.im-status--unknown     { background: #f2f2f7; color: #8e8e93; }
+
+/* ── List states (loading / error / empty) ────────────── */
+
+.im-table-note,
+.im-nav-note {
+  font-size: 13px;
+  color: #8e8e93;
+  padding: 12px 0;
+}
+
+.im-nav-note {
+  padding: 0 16px 12px;
+  font-size: 12px;
+}
+
+/* A note replaces the table, so it lines up with the table header's 24px inset.
+   The detail pane has its own padding, so only the list notes get this. */
+.im-table-wrap .im-table-note {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.im-table-note--error,
+.im-nav-note {
+  color: #b91c1c;
+}
+
+/* ── Intro (overview page) ────────────────────────────── */
+
+.im-intro-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.im-intro-title { font-size: 22px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.4px; margin: 0; }
+
+.im-intro-section { display: flex; flex-direction: column; gap: 8px; }
+
+.im-intro-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #0066cc;
+}
+
+.im-intro-text { font-size: 13px; line-height: 1.7; color: #3a3a3c; margin: 0; }
+
+.im-intro-beyond {
+  background: #fafafa;
+  border: 1px solid #e8e8ed;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.im-intro-bullet-list { display: flex; flex-direction: column; gap: 6px; }
+
+.im-intro-bullet-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #3a3a3c;
+}
+
+.im-intro-bullet-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0066cc;
+  opacity: 0.5;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.im-intro-step-list { display: flex; flex-direction: column; gap: 10px; }
+
+.im-intro-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e8e8ed;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.im-intro-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0066cc;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.im-intro-step-body { display: flex; flex-direction: column; gap: 2px; }
+.im-intro-step-title { font-size: 13px; font-weight: 600; color: #1d1d1f; }
+.im-intro-step-desc { font-size: 12px; line-height: 1.6; color: #666; }
+
+/* ── Issue table ──────────────────────────────────────── */
+
+.im-table-hd {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid #e8e8ed;
+  background: #fff;
+}
+
+.im-table-hd-group {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #8e8e93;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.im-table-hd-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.im-table-hd-count {
+  font-size: 12px;
+  color: #8e8e93;
+  font-weight: 500;
+  padding-bottom: 2px;
+}
+
+.im-table-scroll {
+  overflow-x: auto;
+}
+
+.im-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.im-table thead th {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8e8e93;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #f5f5f7;
+  border-bottom: 1px solid #e8e8ed;
+  white-space: nowrap;
+}
+
+.im-table-row {
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f5;
+  background: #fff;
+  transition: background 0.1s;
+}
+
+.im-table-row:hover {
+  background: #f0f5ff;
+}
+
+.im-table-row td {
+  padding: 10px 14px;
+  vertical-align: top;
+}
+
+.im-td-issue {
+  max-width: 280px;
+}
+
+.im-td-issue-title {
+  font-weight: 500;
+  color: #1d1d1f;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.im-td-issue-desc {
+  font-size: 11px;
+  color: #8e8e93;
+  line-height: 1.4;
+}
+
+.im-td-kpi {
+  font-size: 12px;
+  color: #3a3a3c;
+  white-space: nowrap;
+}
+
+.im-td-date {
+  font-size: 12px;
+  color: #8e8e93;
+  white-space: nowrap;
+}
+
+/* ── Issue detail ─────────────────────────────────────── */
+
+.im-detail-main {
+  padding: 24px 36px 48px;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.im-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #0066cc;
+  padding: 0;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.im-back-btn:hover {
+  text-decoration: underline;
+}
+
+.im-detail-hd {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+
+.im-detail-id {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #8e8e93;
+  text-transform: uppercase;
+}
+
+.im-detail-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.3px;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.im-detail-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.im-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  padding: 14px 16px;
+  background: #f5f5f7;
+  border-radius: 8px;
+  margin-bottom: 22px;
+}
+
+.im-detail-grid-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  color: #8e8e93;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.im-detail-grid-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.im-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.im-detail-summary {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d1d1f;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.im-detail-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #3a3a3c;
+  margin: 0;
+}
+
+/* ── "What now?" tile (no analysis detail on the issue) ── */
+
+.im-next-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 16px;
+  text-align: left;
+  font: inherit;
+  background: #f7f9ff;
+  border: 1px solid #d6e2fa;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.im-next-tile:hover {
+  background: #eef4ff;
+  border-color: #b9cdf5;
+}
+
+.im-next-tile-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.im-next-tile-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #3a3a3c;
+}
+
+.im-next-tile-cta {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0055b3;
+  margin-top: 3px;
+}

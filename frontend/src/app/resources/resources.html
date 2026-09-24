@@ -1,0 +1,440 @@
+<div class="resources-page page--full" [class.resources-page--list-collapsed]="listCollapsed" [class.resources-page--splitting]="draggingSplitter">
+
+  <!-- Left: object list -->
+  <!-- Collapsed: no column — a thin hover strip on the left edge reveals a
+       floating expand arrow, so the ER diagram gets the full width. -->
+  <div class="list-hover-zone" *ngIf="listCollapsed">
+    <button class="list-expand-btn" (click)="toggleList()" title="Show object list" aria-label="Show object list">›</button>
+  </div>
+
+  <div class="object-list-panel" *ngIf="!listCollapsed">
+    <div class="panel-header">
+      <button class="list-collapse-btn" (click)="toggleList()" title="Hide object list" aria-label="Hide object list">‹</button>
+      Objects <span class="count" *ngIf="!loadingList">({{ objects.length }})</span>
+      <!-- Geometric "+" rather than the text glyph: a "+" character sits a shade
+           below the centre of its line box, which reads as a misaligned icon in a
+           22px square. The SVG is centred by construction. -->
+      <button class="add-obj-btn" [axGuide]="'add-object-button'" (click)="openObjModal()" title="Add a custom object" aria-label="Add a custom object">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>
+      </button>
+    </div>
+
+    <div class="list-loading" *ngIf="loadingList">Loading…</div>
+    <div class="list-loading list-error" *ngIf="loadError">Error: {{ loadError }}</div>
+
+    <div class="object-list" *ngIf="!loadingList">
+      <!-- The tooltip opens UPWARD (the default), so it doesn't cover the row
+           underneath and read as that row's name — the same treatment as the Cube, KPI
+           and Data Integration lists. The very first row is the one exception: above it
+           is the scroll container's top edge, which would clip an upward bubble, so
+           that one still opens downward. -->
+      <div
+        *ngFor="let obj of objects; let first = first"
+        class="object-item"
+        [class.object-item--active]="selectedObject?.objectName === obj.objectName"
+        [attr.data-tooltip]="objectTooltip(obj)"
+        [attr.data-tooltip-pos]="first ? 'below' : null"
+        data-tooltip-align="start"
+        (click)="onListItemClick(obj)"
+      >
+        <div class="object-name">{{ obj.objectName }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: ER diagram + detail -->
+  <div class="er-panel" #erPanelRef>
+
+    <!-- Feature intro: shown when no object is selected -->
+    <div class="dm-intro" *ngIf="!selectedObject && !loadingDetail">
+
+      <h2 class="dm-intro-title">Supply Chain Data Model</h2>
+
+      <!-- 1. Overview -->
+      <div class="dm-intro-section">
+        <div class="dm-intro-section-label">Overview</div>
+        <p class="dm-intro-text">
+          SCO provides an out-of-the-box canonical data model focused on common supply chain
+          entities and relationships. The model can be extended with additional attributes
+          and objects to support industry-specific requirements and use cases, from high-level
+          supply chain visibility to detailed operational data. Full <a class="dm-intro-link" href="https://docs.intersystems.com/supplychain20261/csp/docbook/DocBook.UI.Page.cls?KEY=SCAPI_datamodel" target="_blank" rel="noopener">APIs</a> support the data
+          model lifecycle, including retrieving schema information and extending the model
+          programmatically.
+        </p>
+      </div>
+
+      <hr class="dm-intro-rule" />
+
+      <!-- 2. Beyond SCO Workbench -->
+      <div class="dm-intro-section">
+        <div class="dm-intro-section-label">Beyond SCO Workbench</div>
+        <div class="dm-intro-beyond">
+          <p class="dm-intro-text">SCO Workbench covers common data model tasks. 
+            Some operations require working directly in SCO:</p>
+          <div class="dm-intro-bullet-list">
+            <div class="dm-intro-bullet-item">
+              <span class="dm-intro-bullet-dot"></span>
+              <span>Complex class inheritance, indexes, triggers, or computed properties</span>
+            </div>
+            <div class="dm-intro-bullet-item">
+              <span class="dm-intro-bullet-dot"></span>
+              <span>Accessing system and internal classes beyond the supply chain data model</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="dm-intro-rule" />
+
+      <!-- 3. How to use -->
+      <div class="dm-intro-section">
+        <div class="dm-intro-section-label">How to Use</div>
+        <div class="dm-intro-step-list">
+          <div class="dm-intro-step">
+            <span class="dm-intro-step-num">1</span>
+            <div class="dm-intro-step-body">
+              <div class="dm-intro-step-title">Explore built-in objects</div>
+              <div class="dm-intro-step-desc">Browse the object list on the left to see the standard supply chain entities SCO provides.</div>
+            </div>
+          </div>
+          <div class="dm-intro-step">
+            <span class="dm-intro-step-num">2</span>
+            <div class="dm-intro-step-body">
+              <div class="dm-intro-step-title">Inspect attributes and relationships</div>
+              <div class="dm-intro-step-desc">Select an object to view its typed attributes and a relationship diagram showing how it connects to other objects.</div>
+            </div>
+          </div>
+          <div class="dm-intro-step">
+            <span class="dm-intro-step-num">3</span>
+            <div class="dm-intro-step-body">
+              <div class="dm-intro-step-title">Add custom attributes</div>
+              <div class="dm-intro-step-desc">Select any object and click the edit icon in the detail header to add attributes specific to your use case.</div>
+            </div>
+          </div>
+          <div class="dm-intro-step">
+            <span class="dm-intro-step-num">4</span>
+            <div class="dm-intro-step-body">
+              <div class="dm-intro-step-title">Create a custom object</div>
+              <div class="dm-intro-step-desc">Click <strong>+</strong> at the top of the object list to define a new object with your own attributes and structure.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dm-intro-tip">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M8 7v4M8 5.5v.5"/>
+        </svg>
+        <span>Not sure where to start? Open the AI Assistant and describe your data requirements — it can suggest which objects to review or extend.</span>
+      </div>
+
+    </div>
+
+    <!-- Object detail pane. Header + description stay fixed; only the attribute
+         table scrolls. Takes the full panel unless the diagram is toggled on.
+         When split, its height is driven by splitRatio (draggable divider). -->
+    <div class="detail-pane" *ngIf="selectedObject || loadingDetail"
+      [class.detail-pane--split]="selectedObject && showDiagram"
+      [style.flex]="selectedObject && showDiagram ? '0 0 ' + splitRatio + '%' : null"
+    >
+      <div class="detail-loading" *ngIf="loadingDetail">Loading attributes…</div>
+      <ng-container *ngIf="selectedObject && !loadingDetail">
+        <div class="detail-fixed">
+          <div class="detail-header">
+            <span class="detail-name">{{ selectedObject.objectName }}</span>
+            <span class="detail-count" *ngIf="countLabel(selectedObject)">{{ countLabel(selectedObject) }}</span>
+            <span class="detail-class">{{ selectedObject.className }}</span>
+            <button class="icon-btn" [axGuide]="'add-attribute-button'" (click)="openAttrModal()"
+                    data-tooltip="Add custom attribute" data-tooltip-pos="below" data-tooltip-align="end"
+                    aria-label="Add custom attribute">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            </button>
+            <button class="icon-btn" [class.icon-btn--active]="showDiagram" (click)="toggleDiagram()"
+                    [attr.data-tooltip]="showDiagram ? 'Hide relationship diagram' : 'Show relationship diagram'"
+                    data-tooltip-pos="below" data-tooltip-align="end" aria-label="Toggle relationship diagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                <path d="M10 6.5h4a3 3 0 0 1 3 3V14"/>
+              </svg>
+            </button>
+          </div>
+          <p class="detail-desc">{{ selectedObject.description }}</p>
+          <!-- Header lives OUTSIDE the scroll area (fixed), so the scrollbar
+               starts below it. Both tables are table-layout:fixed with the same
+               colgroup so columns stay aligned. -->
+          <table class="attr-table attr-table--head">
+            <colgroup>
+              <col class="col-attr"><col class="col-type"><col class="col-req"><col class="col-custom"><col class="col-desc">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Attribute</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Custom</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+        <div class="attr-scroll">
+          <table class="attr-table attr-table--body">
+            <colgroup>
+              <col class="col-attr"><col class="col-type"><col class="col-req"><col class="col-custom"><col class="col-desc">
+            </colgroup>
+            <tbody>
+              <tr *ngFor="let a of selectedObject.attributes">
+                <td class="attr-name">{{ a.name }}</td>
+                <td><span class="type-badge" [style.color]="typeColor(a.dataType)">{{ a.dataType }}</span></td>
+                <td class="attr-req">{{ a.required ? '✓' : '' }}</td>
+                <td class="attr-custom">{{ a.isCustom ? '✓' : '' }}</td>
+                <td class="attr-desc">{{ a.description }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Draggable divider: drag to change the detail/diagram height ratio. -->
+    <div class="pane-splitter" *ngIf="selectedObject && showDiagram"
+      (mousedown)="onSplitterMouseDown($event)"
+      title="Drag to resize" role="separator" aria-orientation="horizontal"
+    ><span class="pane-splitter__grip"></span></div>
+
+    <!-- ER Diagram — hidden by default; toggled on via the diagram button.
+         Fills whatever height the detail pane's splitRatio leaves. -->
+    <div class="er-diagram-wrap" *ngIf="selectedObject && showDiagram">
+      <div class="panel-header">
+        <span class="er-hint" *ngIf="!erReady">Building diagram…</span>
+        <div class="zoom-controls" *ngIf="erReady">
+          <button class="zoom-btn" (click)="zoomOut()" title="Zoom out">−</button>
+          <span class="zoom-label">{{ zoomPct }}</span>
+          <button class="zoom-btn" (click)="zoomIn()" title="Zoom in">+</button>
+          <button class="zoom-btn zoom-reset" (click)="resetZoom()" title="Fit to view">↺</button>
+        </div>
+      </div>
+
+      <div
+        class="er-scroll"
+        #erScrollRef
+        [class.er-scroll--dragging]="isDragging"
+        [class.er-scroll--panning]="panning"
+        (mousedown)="onBackgroundMouseDown($event)"
+      >
+        <svg
+          *ngIf="erReady"
+          #erSvgRef
+          width="100%"
+          height="100%"
+          class="er-svg"
+        >
+          <defs>
+            <filter id="node-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0066cc" flood-opacity="0.35"/>
+            </filter>
+            <filter id="node-shadow-related" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2e7d32" flood-opacity="0.3"/>
+            </filter>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" class="arrow-marker"></path>
+            </marker>
+            <marker id="arrow-highlight" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" class="arrow-marker-highlight"></path>
+            </marker>
+          </defs>
+
+          <g [attr.transform]="erTransform">
+
+            <!-- Edges -->
+            <g>
+              <path
+                *ngFor="let e of visibleEdges"
+                [attr.d]="edgePath(e)"
+                [class.er-edge]="!(selectedObject && (e.from === selectedObject.objectName || e.to === selectedObject.objectName))"
+                [class.er-edge-highlight]="selectedObject && (e.from === selectedObject.objectName || e.to === selectedObject.objectName)"
+                [attr.stroke-width]="edgeStrokeWidth"
+                [attr.marker-end]="selectedObject && (e.from === selectedObject.objectName || e.to === selectedObject.objectName) ? 'url(#arrow-highlight)' : 'url(#arrow)'"
+              ></path>
+            </g>
+
+            <!-- Nodes (focus view): selected object centered with its related
+                 objects around it; each box shows its header band + attributes. -->
+            <g
+              *ngFor="let node of visibleNodes"
+              class="er-node"
+              [class.er-scroll--dragging]="isDragging"
+              (mousedown)="onNodeMouseDown($event, node)"
+            >
+              <!-- Drop shadow (selected / related) behind the box -->
+              <rect
+                *ngIf="isSelected(node) || isRelated(node)"
+                [attr.x]="node.x"
+                [attr.y]="node.y"
+                [attr.width]="node.width"
+                [attr.height]="nodeHeight(node)"
+                rx="8" ry="8"
+                [class.node-shadow-rect]="isSelected(node)"
+                [class.node-shadow-rect-related]="isRelated(node) && !isSelected(node)"
+                [attr.filter]="isSelected(node) ? 'url(#node-shadow)' : 'url(#node-shadow-related)'"
+              ></rect>
+
+              <!-- ── Header band + attribute rows ── -->
+              <ng-container>
+                <!-- White body -->
+                <rect
+                  [attr.x]="node.x"
+                  [attr.y]="node.y"
+                  [attr.width]="node.width"
+                  [attr.height]="nodeHeight(node)"
+                  rx="6" ry="6"
+                  [class.node-rect]="!isSelected(node)"
+                  [class.node-rect-selected]="isSelected(node)"
+                  [class.node-rect-related]="isRelated(node)"
+                  [attr.stroke-width]="isSelected(node) ? selectedStrokeWidth : nodeStrokeWidth"
+                ></rect>
+                <!-- Header band -->
+                <rect
+                  [attr.x]="node.x"
+                  [attr.y]="node.y"
+                  [attr.width]="node.width"
+                  height="24"
+                  rx="6" ry="6"
+                  [class.node-header]="!isSelected(node) && !isRelated(node)"
+                  [class.node-header-selected]="isSelected(node)"
+                  [class.node-header-related]="isRelated(node) && !isSelected(node)"
+                ></rect>
+                <rect
+                  [attr.x]="node.x"
+                  [attr.y]="node.y + 12"
+                  [attr.width]="node.width"
+                  height="12"
+                  [class.node-header]="!isSelected(node) && !isRelated(node)"
+                  [class.node-header-selected]="isSelected(node)"
+                  [class.node-header-related]="isRelated(node) && !isSelected(node)"
+                ></rect>
+                <text
+                  [attr.x]="node.x + node.width / 2"
+                  [attr.y]="node.y + 12"
+                  class="node-title node-title--band"
+                >{{ node.objectName }}</text>
+                <!-- Attribute rows -->
+                <text
+                  *ngFor="let a of node.attributes; let i = index"
+                  [attr.x]="node.x + 8"
+                  [attr.y]="node.y + 24 + 13 + i * 18"
+                  class="node-attr"
+                  [class.node-attr--required]="a.required"
+                >{{ a.name }} : {{ a.dataType }}</text>
+                <text
+                  *ngIf="node.totalAttributes > node.attributes.length"
+                  [attr.x]="node.x + node.width / 2"
+                  [attr.y]="node.y + 24 + 13 + node.attributes.length * 18"
+                  class="node-attr node-attr--more"
+                >… {{ node.totalAttributes - node.attributes.length }} more</text>
+              </ng-container>
+            </g>
+
+          </g>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Add Custom Attribute modal -->
+<div class="modal-backdrop" *ngIf="attrModalOpen" (click)="closeAttrModal()"></div>
+<div class="modal" *ngIf="attrModalOpen">
+  <div class="modal-header">
+    <span class="modal-title">Add Custom Attribute</span>
+    <button class="modal-close" (click)="closeAttrModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="modal-object-name">Object: <strong>{{ selectedObject?.objectName }}</strong></div>
+    <div class="form-row">
+      <label class="form-label">Name <span class="req-star">*</span></label>
+      <input class="form-input" [axGuide]="'name'" type="text" [(ngModel)]="attrForm.name" placeholder="attributeName" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Type <span class="req-star">*</span></label>
+      <select class="form-input" [axGuide]="'dataType'" [(ngModel)]="attrForm.dataType">
+        <option *ngFor="let t of dataTypes" [value]="t">{{ t }}</option>
+      </select>
+    </div>
+    <div class="form-row form-row--inline">
+      <label class="form-label">Required</label>
+      <input type="checkbox" [axGuide]="'required'" [(ngModel)]="attrForm.required" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Description</label>
+      <textarea class="form-input form-textarea" [axGuide]="'description'" [(ngModel)]="attrForm.description" placeholder="Optional description"></textarea>
+    </div>
+    <div class="modal-error" *ngIf="attrSaveError">{{ attrSaveError }}</div>
+  </div>
+  <div class="modal-footer">
+    <button class="modal-btn modal-btn--cancel" [axGuide]="'cancel-attribute-button'" (click)="closeAttrModal()" [disabled]="attrSaving">Cancel</button>
+    <button class="modal-btn modal-btn--save" [axGuide]="'save-attribute-button'" (click)="saveAttr()" [disabled]="attrSaving || !attrForm.name.trim()">
+      {{ attrSaving ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</div>
+
+<!-- Add Custom Object modal -->
+<div class="modal-backdrop" *ngIf="objModalOpen" (click)="closeObjModal()"></div>
+<div class="modal obj-modal" *ngIf="objModalOpen">
+  <div class="modal-header">
+    <span class="modal-title">Add Custom Object</span>
+    <button class="modal-close" (click)="closeObjModal()">✕</button>
+  </div>
+  <div class="modal-body">
+
+    <div class="form-row">
+      <label class="form-label">Object Name <span class="req-star">*</span></label>
+      <input class="form-input" [axGuide]="'objectName'" type="text" [(ngModel)]="objForm.objectName" placeholder="MyCustomObject" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Description</label>
+      <textarea class="form-input form-textarea" [axGuide]="'description'" [(ngModel)]="objForm.description" placeholder="Optional description"></textarea>
+    </div>
+
+    <div class="obj-attrs-section">
+      <div class="obj-attrs-header">
+        <span class="form-label">Attributes <span class="req-star">*</span></span>
+        <button class="add-row-btn" (click)="addObjAttrRow()" type="button" title="Add attribute row" aria-label="Add attribute row">+</button>
+      </div>
+
+      <div class="obj-attrs-table">
+        <!-- Column headers -->
+        <div class="obj-attrs-row obj-attrs-row--head">
+          <span>Name</span>
+          <span>Type</span>
+          <span class="col-center">Required</span>
+          <span>Description</span>
+          <span></span>
+        </div>
+        <!-- Attribute rows -->
+        <div class="obj-attrs-row" *ngFor="let a of objAttrs; let i = index">
+          <input class="form-input form-input--sm" [axGuide]="'attributes.' + i + '.name'" type="text" [(ngModel)]="a.name" placeholder="name" />
+          <select class="form-input form-input--sm" [axGuide]="'attributes.' + i + '.dataType'" [(ngModel)]="a.dataType">
+            <option *ngFor="let t of dataTypes" [value]="t">{{ t }}</option>
+          </select>
+          <div class="col-center"><input type="checkbox" [axGuide]="'attributes.' + i + '.required'" [(ngModel)]="a.required" /></div>
+          <input class="form-input form-input--sm" [axGuide]="'attributes.' + i + '.description'" type="text" [(ngModel)]="a.description" placeholder="description" />
+          <button class="remove-row-btn" (click)="removeObjAttrRow(i)" [disabled]="objAttrs.length === 1" type="button">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-error" *ngIf="objSaveError">{{ objSaveError }}</div>
+  </div>
+  <div class="modal-footer">
+    <button class="modal-btn modal-btn--cancel" [axGuide]="'cancel-object-button'" (click)="closeObjModal()" [disabled]="objSaving">Cancel</button>
+    <button class="modal-btn modal-btn--save" [axGuide]="'save-object-button'" (click)="saveObj()"
+      [disabled]="objSaving || !objForm.objectName.trim() || objAttrs.some(a => !a.name.trim())">
+      {{ objSaving ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</div>

@@ -1,0 +1,28 @@
+.khv { display: flex; flex-direction: column; gap: 0.5rem; }
+.khv__value-row { display: flex; align-items: baseline; gap: 0.5rem; }
+.khv__value { font-size: 1.75rem; font-weight: 600; }
+.khv__note { font-size: 0.8rem; color: var(--db-text-secondary); font-style: italic; }
+.khv__strip { display: flex; height: 8px; border-radius: 4px; overflow: hidden; }
+.khv__zone { flex: 1 1 0; }
+.khv__issues { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+.khv__issues-total { font-weight: 600; }
+.khv__no-issues { color: var(--db-text-secondary); }
+.khv__sev { padding: 0.05rem 0.4rem; border-radius: 999px; background: var(--db-canvas); border: 1px solid var(--db-border); }
+/* The raised summary is a real <button> (SC-2663 Bug 1): drop UA button chrome so a
+   raised↔non-raised swap never shifts the row, and lay the total + chips out inline like
+   the span it replaces. A pointer + hover cue signals the drill-down affordance. */
+.khv__issues-open {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+  margin: 0; padding: 0.1rem 0.3rem; font: inherit; color: inherit;
+  background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+}
+.khv__issues-open:hover { background: var(--db-canvas); border-color: var(--db-border); }
+.khv__issues-open:focus-visible { outline: 2px solid var(--db-focus, var(--db-border)); outline-offset: 1px; }
+
+/* Loading skeleton — placeholder shapes mirroring the value row / band strip / issues line, so the
+   panel's arrival is not blank-then-pop. Neutral, theme-aware via --db-* tokens; both themes. */
+.khv--skeleton { opacity: 0.7; }
+.khv__sk { display: inline-block; border-radius: 4px; background: var(--db-skeleton, var(--db-border, rgba(128,128,128,0.25))); }
+.khv__sk--value { width: 4rem; height: 1.6rem; }
+.khv__sk--zone { width: 2rem; height: 0.6rem; margin-right: 2px; }
+.khv__sk--issues { width: 8rem; height: 1rem; }
