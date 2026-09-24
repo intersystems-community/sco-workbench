@@ -1,0 +1,102 @@
+/* frontend/src/app/dashboard/tile-overlay.css
+   The full-size tile overlay (spec A2). A fixed backdrop dims the app and centers a
+   definite-size frame; the frame is a flex column so its body claims all height below
+   the header, and the mounted chart/table view fills that body (the same fill-chain the
+   in-grid tile relies on — tile-host.css .tile__body). Definite frame dimensions matter:
+   the chart view sizes itself to its container, so an auto-height frame would collapse to
+   nothing. Design tokens (--db-*) are inherited from the app root, matching both themes. */
+.ov-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.ov-frame {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 92vw);
+  height: min(760px, 88vh);
+  background: var(--db-surface);
+  color: var(--db-text);
+  border: 1px solid var(--db-border);
+  border-radius: 8px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.ov-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--db-border);
+  flex: 0 0 auto;
+}
+
+.ov-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--db-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Themed exactly like the shipped ⋯-menu / confirm-dialog buttons (surface + text +
+   border, canvas on hover) so the glyph stays legible in BOTH themes. An earlier
+   draft used a non-existent --db-surface-2 token, which fell back to a hardcoded
+   light grey and rendered a near-white ✕ on a near-white box in dark mode. */
+.ov-close {
+  flex: 0 0 auto;
+  cursor: pointer;
+  border: 1px solid var(--db-border);
+  border-radius: 6px;
+  background: var(--db-surface);
+  color: var(--db-text);
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+.ov-close:hover { background: var(--db-canvas); }
+
+/* The body claims the remaining height and bounds the mounted view; min-height:0 lets a
+   flex child that would otherwise size to content shrink so its own overflow scrolls. */
+.ov-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;   /* chart fills the top; the KPI health panel stacks beneath it (Fix 3) */
+  padding: 1rem;
+  position: relative; /* anchor for the zoom-out cue */
+  cursor: zoom-out;   /* clicking the body (non-interactive) closes the overlay (A1) */
+}
+/* Zoom-out cue: the symmetric inverse of the tile-body magnifier-plus — a magnifier-minus
+   pinned to the overlay body's top-right, revealed on hover. aria-hidden + pointer-events:none,
+   so the shared interactive-target guard is untouched and a click closes as a bare-body click. */
+.ov-zoom-cue {
+  position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10;
+  display: inline-flex; color: var(--db-text-secondary);
+  opacity: 0; transition: opacity 120ms ease-in-out; pointer-events: none;
+}
+.ov-body:hover .ov-zoom-cue { opacity: 1; }
+.ov-body > * {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+/* The KPI health panel (Fix 3) takes only its natural height beneath the chart — override the
+   shared `.ov-body > * { flex: 1 1 auto }` above, which would otherwise stretch it (AKTH-SPEC-01). */
+.ov-body > app-kpi-health-panel {
+  flex: 0 0 auto;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--db-border);
+}

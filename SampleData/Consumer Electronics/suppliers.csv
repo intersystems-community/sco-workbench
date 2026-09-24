@@ -1,0 +1,11 @@
+ID,Name,Type,Status,primaryLocationId
+SUP-0001,Fujikura Limited,strategic,Active,LOC-SUPL-1
+SUP-0002,IDEMIA Group,commodity,Active,LOC-SUPL-2
+SUP-0003,LG Chem Limited,operational,Active,LOC-SUPL-3
+SUP-0004,Lumileds Holding B.V,strategic,Active,LOC-SUPL-4
+SUP-0005,Nexperia B.V.,tactical,Active,LOC-SUPL-5
+SUP-0006,Royal DSM,tactical,Active,LOC-SUPL-6
+SUP-0007,Skyworks Solutions Incorporated,commodity,Active,LOC-SUPL-7
+SUP-0008,Texas Instruments Incorporated,strategic,Active,LOC-SUPL-8
+SUP-0009,Wickeder Group,strategic,Active,LOC-SUPL-9
+SUP-0010,Zhenghe Group,operational,Active,LOC-SUPL-10

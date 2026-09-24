@@ -1,0 +1,640 @@
+<div class="cubes-page page--full" [class.cubes-page--list-collapsed]="listCollapsed">
+
+  <!-- ── Left: cube list ──────────────────────────────────────── -->
+  <!-- Collapsed: no column at all — a thin hover strip on the left edge reveals a
+       floating expand arrow, so the detail/form gets the full width. -->
+  <div class="list-hover-zone" *ngIf="listCollapsed">
+    <button class="list-expand-btn" (click)="toggleList()" title="Show cube list" aria-label="Show cube list">›</button>
+  </div>
+
+  <div class="cubes-list-panel" *ngIf="!listCollapsed">
+    <div class="panel-header">
+      <button class="list-collapse-btn" (click)="toggleList()" title="Hide cube list" aria-label="Hide cube list">‹</button>
+      Cubes
+      <span class="count" *ngIf="totalCount > 0">({{ totalCount }})</span>
+      <!-- Geometric "+" rather than the text glyph: a "+" character sits a shade
+           below the centre of its line box, which reads as a misaligned icon in a
+           22px square. The SVG is centred by construction. -->
+      <button class="add-cube-btn" [axGuide]="'new-cube'" (click)="attemptNewForm()" title="Create new cube" aria-label="Create new cube">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>
+      </button>
+    </div>
+
+    <div class="cubes-list">
+      <div class="cubes-loading" *ngIf="loading">Loading cubes…</div>
+      <div class="cubes-error" *ngIf="loadError && !loading">{{ loadError }}</div>
+
+      <!-- Flat list, sorted draft → compiled → built; each row keeps its badge.
+           The full-name tooltip opens UPWARD (the default), so it doesn't cover the
+           row underneath and read as that row's name. The very first row is the one
+           exception: above it is the scroll container's top edge, which would clip an
+           upward bubble, so that one still opens downward. -->
+      <div
+        *ngFor="let cube of sortedCubes; let first = first"
+        class="cube-item"
+        [class.cube-item--active]="selectedCube?.name === cube.name && !creatingNew"
+        [attr.data-tooltip]="cube.displayName"
+        [attr.data-tooltip-pos]="first ? 'below' : null"
+        data-tooltip-align="start"
+        (click)="attemptSelectCube(cube)"
+      >
+        <div class="cube-item-name">{{ cube.displayName }}</div>
+        <span class="cube-status-tag"
+              [class.cube-status-tag--draft]="cube.state === 'draft'"
+              [class.cube-status-tag--compiled]="cube.state === 'compiled'">{{ cube.status }}</span>
+      </div>
+
+      <div class="cubes-empty" *ngIf="!loading && !loadError && filteredCubes.length === 0">No cubes defined yet.</div>
+    </div>
+  </div>
+
+  <!-- ── Right panel ──────────────────────────────────────────── -->
+  <div class="cubes-detail-panel">
+
+    <!-- Feature intro: shown when no cube is selected -->
+    <div class="ac-intro" *ngIf="!selectedCube && !creatingNew && !editingCube">
+
+      <h2 class="ac-intro-title">Analytics Cube</h2>
+
+      <!-- 1. Overview -->
+      <div class="ac-intro-section">
+        <div class="ac-intro-section-label">Overview</div>
+        <p class="ac-intro-text">
+          SCO provides a built-in analytics engine with tools to design analytics cubes, query 
+          and visualize cube data, and keep cube data synchronized with the underlying source 
+          data. The analytics engine operates directly on the SCO data model, eliminating the 
+          need for separate ETL or schema transformation. Analytics cubes also provide the 
+          foundation for defining and monitoring KPIs.
+        </p>
+      </div>
+
+      <hr class="ac-intro-rule" />
+
+      <!-- 2. Learn the concepts. A cube carries more vocabulary than any other
+           feature here (dimension, hierarchy, level, member, measure, source
+           class, MDX), and someone who doesn't hold those terms can read the
+           Overview above and still not know what to build. So instead of a
+           glossary nobody reads, each question is a BUTTON that hands itself to
+           the AI Assistant: the dock opens in the user's current chat session and
+           the answer is grounded in the cubes on this instance. Same handoff the
+           Data Integration Deploy uses, minus the forced Agent mode, since these
+           teach rather than act.
+
+           The question is the row's ONLY text. It was tried with a sub-line of the
+           terms each one covers, which just gave five rows of small grey text to
+           skim past before reaching the question itself; the questions already name
+           what they're about. The terms live on in `concepts`, which only steers
+           the prompt. See cube-intro-questions.ts. -->
+      <div class="ac-intro-section">
+        <div class="ac-intro-section-label">Learn the Concepts</div>
+        <p class="ac-intro-text">
+          New to cubes? Pick a question and the AI Assistant will answer it for your SCO instance.
+        </p>
+        <div class="ac-question-list" data-testid="cube-intro-questions">
+          <button
+            *ngFor="let q of introQuestions; trackBy: trackByQuestionId"
+            type="button"
+            class="ac-question"
+            [attr.data-question-id]="q.id"
+            (click)="askConceptQuestion(q)"
+          >
+            <svg class="ac-question__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M14 2.5l1.9 5.1a4 4 0 0 0 2.4 2.4l5.2 2-5.2 2a4 4 0 0 0-2.4 2.4L14 21.5l-1.9-5.1a4 4 0 0 0-2.4-2.4l-5.2-2 5.2-2a4 4 0 0 0 2.4-2.4L14 2.5z"/>
+            </svg>
+            <span class="ac-question__text">{{ q.question }}</span>
+            <span class="ac-question__go" aria-hidden="true">›</span>
+          </button>
+        </div>
+      </div>
+
+      <hr class="ac-intro-rule" />
+
+      <!-- 3. Beyond SCO Workbench -->
+      <div class="ac-intro-section">
+        <div class="ac-intro-section-label">Beyond SCO Workbench</div>
+        <div class="ac-intro-beyond">
+          <p class="ac-intro-text">SCO Workbench covers basic cube definitions. More advanced analytics 
+            capabilities are available directly in SCO:</p>
+          <div class="ac-intro-bullet-list">
+            <div class="ac-intro-bullet-item">
+              <span class="ac-intro-bullet-dot"></span>
+              <span>Computed dimensions, custom member expressions, and complex hierarchies</span>
+            </div>
+            <div class="ac-intro-bullet-item">
+              <span class="ac-intro-bullet-dot"></span>
+              <span>Cube relationships, subject areas, and linked cubes across multiple objects</span>
+            </div>
+            <div class="ac-intro-bullet-item">
+              <span class="ac-intro-bullet-dot"></span>
+              <span>Direct MDX querying, pivot table configuration, and custom dashboards</span>
+            </div>
+            <div class="ac-intro-bullet-item">
+              <span class="ac-intro-bullet-dot"></span>
+              <span>Index configuration and cube rebuild scheduling for performance tuning</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="ac-intro-rule" />
+
+      <!-- 4. How to use -->
+      <div class="ac-intro-section">
+        <div class="ac-intro-section-label">How to Use</div>
+        <div class="ac-intro-step-list">
+          <div class="ac-intro-step">
+            <span class="ac-intro-step-num">1</span>
+            <div class="ac-intro-step-body">
+              <div class="ac-intro-step-title">Explore out-of-the-box cubes</div>
+              <div class="ac-intro-step-desc">SCO ships with a set of pre-built cubes for common supply chain analytics. Select any cube from the list on the left to inspect its dimensions and measures, and see how it is structured. Out-of-the-box cubes are read-only and cannot be edited.</div>
+            </div>
+          </div>
+          <div class="ac-intro-step">
+            <span class="ac-intro-step-num">2</span>
+            <div class="ac-intro-step-body">
+              <div class="ac-intro-step-title">Create a new cube</div>
+              <div class="ac-intro-step-desc">Click <strong>+</strong> in the left panel, give the cube a name, and select the SCO data object it will be built on. Add dimensions and measures to define the analytical structure. Use the AI Assistant for suggestions based on your use case.</div>
+            </div>
+          </div>
+          <div class="ac-intro-step">
+            <span class="ac-intro-step-num">3</span>
+            <div class="ac-intro-step-body">
+              <div class="ac-intro-step-title">Edit a saved cube</div>
+              <div class="ac-intro-step-desc">Select an existing cube from the left panel to update its dimensions or measures. Use the AI Assistant to help refine the structure or troubleshoot unexpected results in your dashboards.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ac-intro-tip">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M8 7v4M8 5.5v.5"/>
+        </svg>
+        <span>Not sure which dimensions or measures to define? Ask the AI Assistant — describe the supply chain metric you want to track and it can suggest a cube structure.</span>
+      </div>
+
+    </div>
+
+    <!-- ── Cube detail view ──────────────────────────────────── -->
+    <div class="cubes-detail-content" *ngIf="selectedCube && !creatingNew && !editingCube">
+
+      <div class="detail-header">
+        <div class="detail-header-left">
+          <div class="detail-name-row">
+            <h2 class="detail-name">{{ selectedCube.displayName }}</h2>
+          </div>
+          <p class="detail-desc" *ngIf="selectedCube.description">{{ selectedCube.description }}</p>
+        </div>
+        <div class="detail-actions">
+          <!-- Gate on the SYNCHRONOUS list-summary `editable` (selectedCube),
+               falling back to the async detail. The list already knows whether a
+               cube is a Workbench cube, so the Edit/Delete buttons appear
+               immediately and don't vanish while (or if) the detail fetch is slow
+               or fails. -->
+          <ng-container *ngIf="selectedEditable">
+            <button class="icon-btn" [axGuide]="'edit-cube'" (click)="openEditForm()" [disabled]="formSaving" data-tooltip-pos="below" data-tooltip="Edit cube" aria-label="Edit cube">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            </button>
+            <!-- Compile / Build without going through the form first: they run the same
+                 validated actions the form's buttons run, on the saved definition.
+                 Compile is a DOCUMENT + GEAR (the cube definition is processed into a
+                 compiled class); Build is a HAMMER (the fact table is constructed). The
+                 gear sits inside the page rather than overlapping its corner, so it
+                 still reads at the 15px the icon buttons render at. -->
+            <button class="icon-btn" [axGuide]="'compile-button'" (click)="compileSelectedCube()" [disabled]="!!formBusy || formSaving"
+                    data-tooltip-pos="below" data-tooltip-align="end"
+                    data-tooltip="Compile the cube class into SCO" aria-label="Compile cube">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="12" cy="15" r="2"/><path d="M12 11.6v.9M12 17.5v.9M15 13.3l-.8.5M9.8 16.2l-.8.5M15 16.7l-.8-.5M9.8 13.8l-.8-.5"/></svg>
+            </button>
+            <button class="icon-btn" [axGuide]="'build-button'" (click)="buildSelectedCube()" [disabled]="!!formBusy || formSaving"
+                    data-tooltip-pos="below" data-tooltip-align="end"
+                    data-tooltip="Compile + build (populate) the cube" aria-label="Build cube">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5.5 18.5 9"/><path d="M12.8 7.7a2 2 0 0 1 0-2.83l1.4-1.4a2 2 0 0 1 2.83 0l3.5 3.5a2 2 0 0 1 0 2.83l-1.4 1.4a2 2 0 0 1-2.83 0z"/><path d="M13.5 11 5 19.5a2.12 2.12 0 0 1-3-3L10.5 8"/></svg>
+            </button>
+            <button class="icon-btn icon-btn--danger" (click)="deleteSelectedCube()" [disabled]="deleting" data-tooltip-pos="below" data-tooltip-align="end" data-tooltip="Delete cube" aria-label="Delete cube">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </ng-container>
+          <span class="readonly-badge" *ngIf="!selectedEditable" title="SCO built-in cube — manage it in the BI Architect">Read-only (SCO built-in)</span>
+        </div>
+      </div>
+
+      <!-- Cube properties row -->
+      <div class="detail-card">
+        <div class="card-title">Cube Properties</div>
+        <div class="prop-grid">
+          <span class="prop-label">Name</span>           <span class="prop-val mono">{{ selectedCube.name }}</span>
+          <span class="prop-label">Class</span>          <span class="prop-val mono">{{ selectedDetail?.className || '—' }}</span>
+          <span class="prop-label">Source Class</span>   <span class="prop-val mono">{{ selectedCube.sourceClass || '—' }}</span>
+          <span class="prop-label">Fact Class</span>     <span class="prop-val mono">{{ selectedDetail?.factClass || '—' }}</span>
+          <span class="prop-label">Fact Count</span>     <span class="prop-val mono">{{ selectedDetail?.factCount ?? '—' }}</span>
+        </div>
+      </div>
+
+      <div class="detail-loading" *ngIf="detailLoading">Loading cube structure…</div>
+
+      <!-- The structure fetch failed — say so and offer a retry, instead of
+           silently rendering an empty shell (the old intermittent-blank bug). -->
+      <div class="detail-error" *ngIf="detailError && !detailLoading">
+        <span>{{ detailError }}</span>
+        <button type="button" class="link-btn" (click)="retryDetail()">Retry</button>
+      </div>
+
+      <!-- Dimensions → hierarchies → levels (from the D2CLIENT Info API).
+           Rendered as the Architect-style tree: each dimension lists its
+           hierarchies, and each hierarchy its levels. -->
+      <div class="detail-card" [axGuide]="'dimensions'" *ngIf="!detailLoading && !detailError">
+        <div class="card-title">Dimensions <span class="card-count">({{ selectedDetail?.dimensions?.length || 0 }})</span></div>
+        <div *ngFor="let dim of selectedDetail?.dimensions; let last = last" class="dim-block" [class.dim-block--last]="last">
+          <div class="dim-block-header">
+            <span class="dim-tree-toggle">▾</span>
+            <span class="dim-block-name">{{ dim.name }}</span>
+            <span class="dim-type-tag">{{ dimKind(dim) }}</span>
+          </div>
+          <div *ngFor="let h of dim.hierarchies" class="hier-block">
+            <div class="hier-label"><span class="hier-bullet">↳</span> Hierarchy: <strong>{{ h.name }}</strong></div>
+            <table class="def-table">
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Display Name</th>
+                  <th>Source</th>
+                  <th *ngIf="dimKind(dim) === 'time'">Time Function</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let l of h.levels">
+                  <td class="mono">{{ l.name }}</td>
+                  <td>{{ l.caption || '—' }}</td>
+                  <td class="mono small">
+                    {{ l.sourceProperty || l.sourceExpression || '—' }}
+                    <span class="src-badge" *ngIf="l.sourceExpression && !l.sourceProperty">expr</span>
+                  </td>
+                  <td class="mono small" *ngIf="dimKind(dim) === 'time'">{{ l.type || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-empty" *ngIf="!selectedDetail?.dimensions?.length">No dimensions defined.</div>
+      </div>
+
+      <!-- Measures -->
+      <div class="detail-card" [axGuide]="'measures'" *ngIf="!detailLoading && !detailError">
+        <div class="card-title">Measures <span class="card-count">({{ selectedDetail?.measures?.length || 0 }})</span></div>
+        <table class="def-table">
+          <thead><tr><th>Name</th><th>Caption</th><th>Type</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let m of selectedDetail?.measures">
+              <td class="mono">{{ m.name }}</td>
+              <td>{{ m.caption || '—' }}</td>
+              <td>{{ m.type || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="card-empty" *ngIf="!selectedDetail?.measures?.length">No measures defined.</div>
+      </div>
+
+      <!-- Listings -->
+      <div class="detail-card" *ngIf="!detailLoading && selectedDetail?.listings?.length">
+        <div class="card-title">Listings <span class="card-count">({{ selectedDetail?.listings?.length || 0 }})</span></div>
+        <table class="def-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Order</th><th>Fields</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let l of selectedDetail?.listings">
+              <td class="mono">{{ l.name }}</td>
+              <td>{{ l.type || '—' }}</td>
+              <td class="mono small">{{ l.order || '—' }}</td>
+              <td class="mono small">{{ l.fields || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ── Create / Edit form ────────────────────────────────── -->
+    <div class="cube-form-layout" *ngIf="creatingNew || editingCube">
+    <div class="cube-form-wrap">
+      <div class="cube-form" (input)="markDirty()" (change)="markDirty()">
+
+        <!-- Form header -->
+        <div class="form-header">
+          <h2 class="form-title">{{ creatingNew ? 'New Cube' : 'Edit Cube' }}</h2>
+        </div>
+        <div class="form-error" #formErrorEl *ngIf="formError">{{ formError }}</div>
+
+        <!-- Structured build failure: deduped per-row errors in a foldable box. -->
+        <div class="form-error build-error" *ngIf="buildError">
+          <div class="build-error-head">
+            <span class="build-error-summary">{{ buildError.summary }}</span>
+            <button type="button" class="link-btn build-error-toggle"
+                    (click)="toggleBuildErrorDetails()"
+                    [attr.aria-expanded]="buildError.expanded">
+              {{ buildError.expanded ? 'Hide details ▲' : 'Show details ▼' }}
+            </button>
+          </div>
+          <ul class="build-error-list" *ngIf="buildError.expanded">
+            <li *ngFor="let line of buildError.lines">{{ line }}</li>
+          </ul>
+        </div>
+
+        <!-- ── Basic properties ──────────────────────────────── -->
+        <div class="form-section">
+          <div class="form-section-title">Cube Properties</div>
+          <div class="form-grid">
+            <label class="form-label">Name <span class="required">*</span></label>
+            <input class="form-input" [axGuide]="'name'" [(ngModel)]="cubeForm.name" placeholder="e.g. SalesOrderCube" />
+
+            <label class="form-label">Display Name</label>
+            <input class="form-input" [axGuide]="'displayName'" [(ngModel)]="cubeForm.displayName" placeholder="e.g. Sales Order Cube" />
+
+            <label class="form-label">Description</label>
+            <textarea class="form-input form-textarea" [axGuide]="'description'" [(ngModel)]="cubeForm.description" placeholder="What does this cube model?"></textarea>
+
+            <label class="form-label">Source Class <span class="required">*</span></label>
+            <div class="source-class-field" [axGuide]="'sourceClass'">
+              <select class="form-input form-select"
+                      *ngIf="!sourceClassOther"
+                      [ngModel]="cubeForm.sourceClass"
+                      (ngModelChange)="onSourceClassSelectChange($event)">
+                <option value="">— select source class —</option>
+                <option *ngFor="let obj of baseObjects" [value]="obj.className">{{ obj.className }}</option>
+                <option value="__other__">Other…</option>
+              </select>
+              <div class="source-class-other" *ngIf="sourceClassOther">
+                <input class="form-input" [(ngModel)]="cubeForm.sourceClass" (ngModelChange)="markDirty()" (blur)="onSourceClassChange()" placeholder="Fully-qualified class, e.g. My.Package.MyClass" />
+                <button type="button" class="link-btn" (click)="sourceClassOther = false; cubeForm.sourceClass = ''; sourceClassProperties = []">use list</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Dimensions ────────────────────────────────────── -->
+        <div class="form-section">
+          <div class="form-section-title">
+            Dimensions
+            <span class="section-count">({{ cubeForm.dimensions.length }})</span>
+            <button class="form-add-row-btn" (click)="addDimension()">+ Add Dimension</button>
+          </div>
+
+          <div *ngFor="let dim of cubeForm.dimensions; let di = index; trackBy: trackByIndex" class="collapsible-block"
+               [attr.data-new-block]="'dimension-' + di"
+               [class.collapsible-block--collapsed]="!dim.expanded"
+               [class.collapsible-block--new]="isJustAdded('dimension', di)">
+            <div class="collapsible-header" (click)="toggleDimension(dim)">
+              <span class="collapse-arrow">{{ dim.expanded ? '▾' : '▸' }}</span>
+              <span class="collapsible-label">{{ dim.displayName || dim.name || 'New Dimension' }}</span>
+              <span class="dim-type-tag dim-type-tag--{{ dim.type }}">{{ dim.type }}</span>
+              <!-- Collapsed: the body is hidden, so summarise what's inside it. -->
+              <ng-container *ngIf="!dim.expanded">
+                <span class="dim-summary-pill">{{ dim.hierarchies.length }} hier</span>
+                <span class="dim-summary-pill">{{ dim.hierarchies[0]?.levels?.length || 0 }} levels</span>
+              </ng-container>
+              <button class="block-remove-btn" (click)="$event.stopPropagation(); removeDimension(di)">✕</button>
+            </div>
+
+            <div class="collapsible-body" *ngIf="dim.expanded">
+              <div class="form-grid form-grid--compact">
+                <label class="form-label">Name <span class="required">*</span></label>
+                <input class="form-input" [axGuide]="'dimensions.' + di + '.name'" [(ngModel)]="dim.name" placeholder="e.g. DateOfSale" />
+
+                <label class="form-label">Display Name</label>
+                <input class="form-input" [axGuide]="'dimensions.' + di + '.displayName'" [(ngModel)]="dim.displayName" placeholder="e.g. Order Date" />
+
+                <label class="form-label">Type</label>
+                <select class="form-input form-select" [axGuide]="'dimensions.' + di + '.type'" [(ngModel)]="dim.type">
+                  <option *ngFor="let t of DIM_TYPES" [value]="t">{{ t }}</option>
+                </select>
+              </div>
+
+              <!-- Hierarchies -->
+              <div class="sub-section">
+                <div class="sub-section-title">
+                  Hierarchies
+                  <button class="form-add-row-btn form-add-row-btn--sm" (click)="addHierarchy(di)">+ Add</button>
+                </div>
+
+                <div *ngFor="let h of dim.hierarchies; let hi = index; trackBy: trackByIndex" class="hier-form-block">
+                  <div class="hier-form-header">
+                    <div class="form-grid form-grid--compact">
+                      <label class="form-label">Hierarchy Name <span class="required">*</span></label>
+                      <input class="form-input" [(ngModel)]="h.name" placeholder="e.g. H1 or Actual" />
+                      <label class="form-label">Display Name</label>
+                      <input class="form-input" [(ngModel)]="h.displayName" placeholder="Optional" />
+                    </div>
+                    <button class="block-remove-btn" (click)="removeHierarchy(di, hi)" *ngIf="dim.hierarchies.length > 1">✕</button>
+                  </div>
+
+                  <!-- Levels -->
+                  <div class="levels-block">
+                    <div class="levels-header">
+                      Levels
+                      <button class="form-add-row-btn form-add-row-btn--sm" (click)="addLevel(di, hi)">+ Add</button>
+                    </div>
+                    <!-- A time dimension's levels are extracted from ONE date
+                         field (chosen once per level via Time Function); a data
+                         dimension's levels map to a source property. So we show
+                         Source Property for data dims, Time Function for time.
+
+                         Laid out as a CSS grid rather than a table so it can
+                         REFLOW: when the form column gets narrow (the AI chat
+                         dock is open, the window is small), a level's fields wrap
+                         onto further lines and each grows its own label, instead
+                         of every column shrinking until nothing is readable. The
+                         column headings below therefore only apply to the wide
+                         layout and are hidden once it reflows — see
+                         `@container` in bi-cubes.css. -->
+                    <div class="levels-grid" [class.levels-grid--time]="isTimeDimension(dim)">
+                      <div class="levels-grid__head">
+                        <span>Level <span class="required">*</span></span>
+                        <span>Display Name</span>
+                        <span>Source ({{ isTimeDimension(dim) ? 'date field' : 'value' }}) <span class="required" *ngIf="!isTimeDimension(dim)">*</span></span>
+                        <span *ngIf="isTimeDimension(dim)">Time Function <span class="required">*</span></span>
+                        <span></span>
+                      </div>
+
+                      <div class="level-row" *ngFor="let l of h.levels; let li = index; trackBy: trackByIndex">
+                        <div class="level-field level-field--name">
+                          <span class="level-field__label">Level <span class="required">*</span></span>
+                          <input class="form-input form-input--sm" [axGuide]="'dimensions.' + di + '.hierarchies.' + hi + '.levels.' + li + '.name'" [(ngModel)]="l.name" placeholder="Name" />
+                        </div>
+
+                        <div class="level-field level-field--display">
+                          <span class="level-field__label">Display Name</span>
+                          <input class="form-input form-input--sm" [(ngModel)]="l.displayName" placeholder="Display Name" />
+                        </div>
+
+                        <!-- Source is a Property OR an Expression (mutually exclusive).
+                             Property → pick from the base class's properties;
+                             Expression → free-text ObjectScript. -->
+                        <div class="level-field level-field--src level-src-cell">
+                          <span class="level-field__label">Source ({{ isTimeDimension(dim) ? 'date field' : 'value' }}) <span class="required" *ngIf="!isTimeDimension(dim)">*</span></span>
+                          <div class="src-cell" [axGuide]="'dimensions.' + di + '.hierarchies.' + hi + '.levels.' + li + '.sourceProperty'">
+                            <div class="src-kind">
+                              <label><input type="radio" [name]="'src-' + di + '-' + hi + '-' + li" value="property" [(ngModel)]="l.srcKind" /> Property</label>
+                              <label><input type="radio" [name]="'src-' + di + '-' + hi + '-' + li" value="expression" [(ngModel)]="l.srcKind" /> Expression</label>
+                            </div>
+                            <select *ngIf="l.srcKind !== 'expression'" class="form-input form-input--sm form-select" [(ngModel)]="l.sourceProperty" [disabled]="!cubeForm.sourceClass">
+                              <option value="">{{ cubeForm.sourceClass ? '— select property —' : '— select source class first —' }}</option>
+                              <option *ngFor="let p of sourceClassProperties" [value]="p">{{ p }}</option>
+                            </select>
+                            <input *ngIf="l.srcKind === 'expression'" class="form-input form-input--sm" [(ngModel)]="l.sourceExpression" placeholder="e.g. %source.orderStatus" />
+                          </div>
+                        </div>
+
+                        <div class="level-field level-field--timefn" *ngIf="isTimeDimension(dim)">
+                          <span class="level-field__label">Time Function <span class="required">*</span></span>
+                          <select class="form-input form-input--sm form-select" [axGuide]="'dimensions.' + di + '.hierarchies.' + hi + '.levels.' + li + '.timeFunction'" [(ngModel)]="l.timeFunction">
+                            <option value="">—</option>
+                            <option *ngFor="let tf of TIME_FUNCTIONS" [value]="tf">{{ tf }}</option>
+                          </select>
+                        </div>
+
+                        <div class="level-field level-field--remove">
+                          <button class="block-remove-btn" (click)="removeLevel(di, hi, li)" *ngIf="h.levels.length > 1" title="Remove level" aria-label="Remove level">✕</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-empty-hint" *ngIf="cubeForm.dimensions.length === 0">No dimensions yet. Click + Add Dimension.</div>
+        </div>
+
+        <!-- ── Measures ──────────────────────────────────────── -->
+        <div class="form-section">
+          <div class="form-section-title">
+            Measures
+            <span class="section-count">({{ cubeForm.measures.length }})</span>
+            <button class="form-add-row-btn" (click)="addMeasure()">+ Add Measure</button>
+          </div>
+
+          <div *ngFor="let m of cubeForm.measures; let mi = index; trackBy: trackByIndex" class="collapsible-block"
+               [attr.data-new-block]="'measure-' + mi"
+               [class.collapsible-block--new]="isJustAdded('measure', mi)">
+            <div class="collapsible-header" (click)="toggleMeasure(m)">
+              <span class="collapse-arrow">{{ m.expanded ? '▾' : '▸' }}</span>
+              <span class="collapsible-label">{{ m.displayName || m.name || 'New Measure' }}</span>
+              <span class="measure-agg-tag">{{ m.aggregate }}</span>
+              <button class="block-remove-btn" (click)="$event.stopPropagation(); removeMeasure(mi)">✕</button>
+            </div>
+
+            <div class="collapsible-body" *ngIf="m.expanded">
+              <div class="form-grid form-grid--compact">
+                <label class="form-label">Name <span class="required">*</span></label>
+                <input class="form-input" [axGuide]="'measures.' + mi + '.name'" [(ngModel)]="m.name" placeholder="e.g. TotalRevenue" />
+
+                <label class="form-label">Display Name</label>
+                <input class="form-input" [axGuide]="'measures.' + mi + '.displayName'" [(ngModel)]="m.displayName" placeholder="e.g. Total Revenue" />
+
+                <!-- Source is a Property OR an Expression (mutually exclusive),
+                     mirroring a dimension level. Property → pick from the source
+                     class's properties; Expression → free-text ObjectScript. -->
+                <label class="form-label">Source</label>
+                <div class="src-cell" [axGuide]="'measures.' + mi + '.sourceProperty'">
+                  <div class="src-kind">
+                    <label><input type="radio" [name]="'msrc-' + mi" value="property" [(ngModel)]="m.srcKind" /> Property</label>
+                    <label><input type="radio" [name]="'msrc-' + mi" value="expression" [(ngModel)]="m.srcKind" /> Expression</label>
+                  </div>
+                  <select *ngIf="m.srcKind !== 'expression'" class="form-input form-select" [(ngModel)]="m.sourceProperty" [disabled]="!cubeForm.sourceClass">
+                    <option value="">{{ cubeForm.sourceClass ? '— select property (blank for %COUNT) —' : '— select source class first —' }}</option>
+                    <option *ngFor="let p of sourceClassProperties" [value]="p">{{ p }}</option>
+                  </select>
+                  <input *ngIf="m.srcKind === 'expression'" class="form-input" [axGuide]="'measures.' + mi + '.sourceExpression'" [(ngModel)]="m.sourceExpression" placeholder="e.g. %source.Qty * %source.Price" />
+                </div>
+
+                <label class="form-label">Aggregate</label>
+                <select class="form-input form-select" [axGuide]="'measures.' + mi + '.aggregate'" [(ngModel)]="m.aggregate">
+                  <option *ngFor="let a of AGGREGATES" [value]="a">{{ a }}</option>
+                </select>
+
+                <label class="form-label">Type</label>
+                <select class="form-input form-select" [axGuide]="'measures.' + mi + '.type'" [(ngModel)]="m.type">
+                  <option *ngFor="let t of MEASURE_TYPES" [value]="t">{{ t }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-empty-hint" *ngIf="cubeForm.measures.length === 0">No measures yet. Click + Add Measure.</div>
+        </div>
+
+        <!-- Actions: Save (draft) · Compile (class into IRIS) · Build (populate).
+             Compile covers Save; Build covers Save + Compile. -->
+        <div class="form-actions">
+          <button class="form-btn form-btn--outline" [axGuide]="'save-draft-button'" (click)="saveDraft()" [disabled]="!!formBusy"
+                  data-tooltip-align="start" data-tooltip="Save the current form as a draft (may be incomplete)">
+            <span class="btn-spinner" *ngIf="formBusy === 'save'" aria-hidden="true"></span>
+            {{ formBusy === 'save' ? 'Saving…' : 'Save' }}
+          </button>
+          <button class="form-btn form-btn--outline" [axGuide]="'compile-button'" (click)="compileCube()" [disabled]="!!formBusy"
+                  data-tooltip="Save + generate and compile the cube class into SCO">
+            <span class="btn-spinner" *ngIf="formBusy === 'compile'" aria-hidden="true"></span>
+            {{ formBusy === 'compile' ? 'Compiling…' : 'Compile' }}
+          </button>
+          <button class="form-btn form-btn--outline" [axGuide]="'build-button'" (click)="buildCube()" [disabled]="!!formBusy"
+                  data-tooltip="Save + compile + build (populate) the cube">
+            <span class="btn-spinner" *ngIf="formBusy === 'build'" aria-hidden="true"></span>
+            {{ formBusy === 'build' ? 'Building…' : 'Build' }}
+          </button>
+          <button class="form-btn form-cancel-btn" [axGuide]="'cancel-button'" (click)="cancelForm()" [disabled]="!!formBusy"
+                  data-tooltip="Discard changes and return to the cube detail">Cancel</button>
+        </div>
+
+      </div>
+    </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- Confirm: delete cube -->
+<app-confirm-dialog
+  *ngIf="showDeleteConfirm && selectedCube"
+  title="Delete cube"
+  [message]="'Delete “' + selectedCube.name + '”? This permanently removes its data and definition from SCO.'"
+  confirmLabel="Delete"
+  [danger]="true"
+  (confirmed)="confirmDelete()"
+  (cancelled)="showDeleteConfirm = false">
+</app-confirm-dialog>
+
+<!-- Confirm: discard unsaved cube edits on cancel -->
+<app-confirm-dialog
+  *ngIf="showCancelConfirm"
+  title="Discard changes?"
+  message="You have unsaved changes. Leaving now will discard them."
+  confirmLabel="Discard"
+  cancelLabel="Keep editing"
+  [danger]="true"
+  (confirmed)="performCancel()"
+  (cancelled)="showCancelConfirm = false">
+</app-confirm-dialog>
+
+<!-- Leave prompt: navigating away with unsaved edits (save draft / leave / stay) -->
+<app-confirm-dialog
+  *ngIf="showLeaveConfirm"
+  title="Save changes?"
+  message="You have unsaved changes to this cube. Save them as a draft before leaving?"
+  confirmLabel="Save"
+  tertiaryLabel="Leave without saving"
+  cancelLabel="Keep editing"
+  (confirmed)="leaveSaveDraft()"
+  (tertiary)="leaveWithoutSaving()"
+  (cancelled)="leaveKeepEditing()">
+</app-confirm-dialog>
+
+<!-- Confirm: smaller destructive form actions (remove measure/dimension/level/hierarchy) -->
+<app-confirm-dialog
+  *ngIf="confirmPrompt as p"
+  [title]="p.title"
+  [message]="p.message"
+  [confirmLabel]="p.confirmLabel"
+  [danger]="true"
+  (confirmed)="runConfirmPrompt()"
+  (cancelled)="cancelConfirmPrompt()">
+</app-confirm-dialog>

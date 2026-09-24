@@ -1,0 +1,83 @@
+/* Shared style for "documentation only" feature pages (Business Process,
+   Scenario Analysis) — features not yet supported in the Workbench, presented
+   as an overview with links to the official docs. Visual language matches the
+   Getting Started page (SF Pro, #0066cc accent, light theme). */
+
+.fi-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+  color: #1d1d1f;
+  font-family: 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Not-supported banner */
+.fi-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff8e6;
+  border: 1px solid #f2d98a;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 28px;
+}
+.fi-banner__icon { flex: none; color: #9a6700; margin-top: 1px; }
+.fi-banner__text { font-size: 14px; line-height: 1.5; color: #6b4e00; }
+.fi-banner__text strong { font-weight: 600; }
+
+/* Header */
+.fi-lede { font-size: 16px; line-height: 1.6; color: #3a3a3c; margin: 0 0 28px; }
+
+/* Sections */
+.fi-section { margin-bottom: 28px; }
+.fi-section__title { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+
+/* Concept cards */
+.fi-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.fi-card {
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 12px;
+  padding: 16px;
+}
+.fi-card__icon { font-size: 22px; margin-bottom: 8px; }
+.fi-card__title { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.fi-card__desc { font-size: 13.5px; line-height: 1.5; color: #656d76; margin: 0; }
+
+/* Doc links */
+.fi-links { display: flex; flex-direction: column; gap: 10px; }
+.fi-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: #1d1d1f;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fi-link:hover { border-color: #b9d4f0; box-shadow: 0 2px 12px rgba(0, 102, 204, 0.08); }
+.fi-link__icon { flex: none; color: #0066cc; }
+.fi-link__text { flex: 1; min-width: 0; }
+.fi-link__title { font-size: 14.5px; font-weight: 600; }
+.fi-link__sub { font-size: 12.5px; color: #656d76; margin-top: 2px; }
+.fi-link__ext { flex: none; color: #98a2ad; }
+
+/* Assistant hint */
+.fi-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 28px;
+  padding: 14px 16px;
+  background: #eef5fd;
+  border: 1px solid #cfe2f7;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #234;
+}
+.fi-hint__icon { flex: none; color: #0066cc; margin-top: 1px; }

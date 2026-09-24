@@ -1,0 +1,66 @@
+<div class="fi-page page--reading">
+  <div class="fi-wrap">
+
+    <div class="fi-banner">
+      <svg class="fi-banner__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      </svg>
+      <span class="fi-banner__text">
+        <strong>Not yet available in the Workbench.</strong>
+        Business Process authoring isn't managed through this UI yet. This page explains
+        what the feature is and where to learn more.
+      </span>
+    </div>
+
+    <app-page-header eyebrow="Feature Overview" heading="Business Process" />
+    <p class="fi-lede">
+      In InterSystems Supply Chain Orchestrator, a <strong>business process</strong> is a
+      long-running, graphical workflow (authored in Business Process Language, BPL) that
+      orchestrates the steps of a supply chain operation — receiving a request, transforming
+      data, calling other hosts, making decisions, and returning a response, all with full
+      message tracing.
+    </p>
+
+    <section class="fi-section">
+      <h2 class="fi-section__title">Key concepts</h2>
+      <div class="fi-cards">
+        <div class="fi-card" *ngFor="let c of concepts">
+          <div class="fi-card__icon">{{ c.icon }}</div>
+          <div class="fi-card__title">{{ c.title }}</div>
+          <p class="fi-card__desc">{{ c.desc }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="fi-section">
+      <h2 class="fi-section__title">Learn more</h2>
+      <div class="fi-links">
+        <a class="fi-link" *ngFor="let l of docLinks" [href]="l.url" target="_blank" rel="noopener">
+          <svg class="fi-link__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M4 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+            <path d="M6 7h6M6 11h6M6 15h4"/>
+          </svg>
+          <span class="fi-link__text">
+            <span class="fi-link__title">{{ l.title }}</span>
+            <span class="fi-link__sub">{{ l.sub }}</span>
+          </span>
+          <svg class="fi-link__ext" width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M7 1h4v4M11 1L5 7M2 4H1v7h7V8"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <div class="fi-hint">
+      <svg class="fi-hint__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span>
+        Tip: the <strong>AI Assistant</strong> (bottom-right) can generate and deploy a BPL
+        business process for you as part of building a data pipeline into SCO — just describe
+        the flow you want.
+      </span>
+    </div>
+
+  </div>
+</div>

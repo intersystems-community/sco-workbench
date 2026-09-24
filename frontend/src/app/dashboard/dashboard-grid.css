@@ -1,0 +1,58 @@
+/* frontend/src/app/dashboard/dashboard-grid.css
+   The coarse dashboard grid: three equal columns, tiles spanning discrete cells
+   by their layout. Rows have a DEFINITE unit height so a tile spanning `h` rows
+   is exactly h × --db-row-h tall — a 1×1 tile stays one cell high and its body
+   scrolls inside (tile-host.css .tile__body), instead of the row growing to the
+   tile's full content height and stretching the page (redesign R2 / spec §12;
+   the earlier `minmax(320px, auto)` let the `auto` maximum grow the track).
+
+   The unit row is 360px (redesign R8): the earlier 320px left a 1-row tile body
+   ~277px tall, so the chart — sized to fill its body — had room to draw but a
+   default-height chart still overflowed and forced a vertical scrollbar. 360px
+   gives a 1-row chart tile enough height to render whole, so a single-height
+   chart never needs to scroll. Collapses to a single column on narrow screens
+   (the existing Change-7 640px breakpoint), where every tile spans the full width.
+
+   Columns have a DEFINITE minimum width (redesign R8b): the earlier
+   `repeat(3, 1fr)` let each column — and so each tile — shrink to any width, so at
+   tablet / narrow-laptop widths charts and tables were crushed. `minmax(--db-col-min,
+   1fr)` floors each track at 360px (matching the row height for a square-ish 1×1
+   cell) while still letting it grow (1fr) to fill a wide viewport. When three floored
+   columns plus gaps no longer fit, the grid overflows its container and the dashboard
+   body (dashboard.css .db__body, overflow:auto) scrolls horizontally — the whole tile
+   stays usable at its floor instead of collapsing. Below the 640px breakpoint the grid
+   drops to a single 1fr column, so the floor never forces a scrollbar on a phone. */
+.grid {
+  display: grid;
+  --db-col-min: 360px;
+  grid-template-columns: repeat(3, minmax(var(--db-col-min), 1fr));
+  --db-row-h: 360px;
+  grid-auto-rows: var(--db-row-h);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.grid__cell {
+  min-width: 0; /* let a tile's content shrink instead of overflowing the track */
+  display: flex;
+}
+
+/* The lifted tile during a move-drag — dimmed + above its neighbours so the
+   live reflow reads clearly. The visible sliding is Angular moving the tracked
+   DOM nodes; no transition is required for correctness. */
+.grid__cell.is-dragging { opacity: 0.6; z-index: 10; }
+
+.grid__cell > app-tile-host {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  /* On one column, a stored multi-column span would overflow — pin every tile to
+     the single track. Row spans are harmless (they only stack taller). */
+  .grid__cell {
+    grid-column: span 1 !important;
+  }
+}

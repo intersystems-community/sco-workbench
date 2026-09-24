@@ -1,0 +1,132 @@
+<div class="shell" [class.shell--chat-open]="chatOpen" [style.--chat-width.px]="chatWidth" [style.--toast-offset.px]="chatOpen ? chatWidth : 0">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <!-- Brand banner -->
+    <div class="sidebar-brand" data-testid="sidebar-brand">
+      <span class="sidebar-brand__name">SCO Workbench</span>
+    </div>
+    <ul class="nav-list">
+      <ng-container *ngFor="let item of navItems">
+        <!-- A top-level entry: either a page, or a plain group heading. A heading
+             isn't clickable and never takes the highlight — its children are always
+             listed below it, so whichever one is the current page shows it. -->
+        <li
+          class="nav-item"
+          [class.nav-item--parent]="item.children"
+          [class.nav-item--active]="item.active"
+          [attr.aria-current]="item.active ? 'page' : null"
+          [attr.data-testid]="'nav-' + (item.view || 'group-' + item.groupId)"
+          (click)="setActiveNav(item)"
+        >
+          {{ item.label }}
+        </li>
+        <li
+          *ngFor="let child of item.children"
+          class="nav-item nav-item--child"
+          [class.nav-item--active]="child.active"
+          [attr.aria-current]="child.active ? 'page' : null"
+          [attr.data-testid]="'nav-' + child.view"
+          (click)="setActiveNav(child)"
+        >
+          {{ child.label }}
+        </li>
+      </ng-container>
+    </ul>
+    <!-- Pinned to the bottom (the nav list above takes flex:1). -->
+    <div class="sidebar-footer" data-testid="sidebar-footer">
+      <div class="sidebar-version" data-testid="sidebar-version">Version: {{ appVersion }}</div>
+      <div class="sidebar-credit" data-testid="sidebar-credit">Originally built by InterSystems supply chain team</div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="content">
+    <app-introduction *ngIf="activeView === 'introduction'" class="view-fill"></app-introduction>
+    <app-dashboard *ngIf="activeView === 'dashboard'" class="view-fill"></app-dashboard>
+    <app-resources *ngIf="activeView === 'data-model'" class="view-fill"></app-resources>
+    <app-data-integration *ngIf="activeView === 'data-integration'" class="view-fill"></app-data-integration>
+    <app-bi-cubes *ngIf="activeView === 'bi-cubes'" class="view-fill"></app-bi-cubes>
+    <app-kpi *ngIf="activeView === 'kpi'" class="view-fill"></app-kpi>
+    <app-business-process *ngIf="activeView === 'business-process'" class="view-fill"></app-business-process>
+    <app-issue-management *ngIf="activeView === 'issue-management'" class="view-fill"></app-issue-management>
+    <app-others *ngIf="activeView === 'others'" class="view-fill"></app-others>
+    <app-load-sample-data *ngIf="activeView === 'load-sample-data'" class="view-fill"></app-load-sample-data>
+
+  </div>
+
+  <!-- Docked AI assistant panel (right side, width-adjustable). Always MOUNTED —
+       hidden with a class (display:none) rather than *ngIf when closed — so the
+       embedded <app-assistant-panel> is never destroyed and its in-flight sessions
+       keep streaming in the background after the user closes the dock. -->
+  <aside class="assistant-dock" [class.assistant-dock--closed]="!chatOpen || !chatAllowed" [style.width.px]="chatWidth">
+    <!-- Left-edge resize handle -->
+    <div
+      class="assistant-dock__resize"
+      title="Drag to resize"
+      (pointerdown)="startResize($event)"
+      (pointermove)="onResizeMove($event)"
+      (pointerup)="endResize($event)"
+      (pointercancel)="endResize($event)"
+    ></div>
+
+    <header class="assistant-dock__head">
+      <div class="assistant-dock__title">
+        <svg class="assistant-dock__mark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M14 2.5l1.9 5.1a4 4 0 0 0 2.4 2.4l5.2 2-5.2 2a4 4 0 0 0-2.4 2.4L14 21.5l-1.9-5.1a4 4 0 0 0-2.4-2.4l-5.2-2 5.2-2a4 4 0 0 0 2.4-2.4L14 2.5z"/>
+          <path d="M6 2l.8 2.2a2 2 0 0 0 1.2 1.2L10.2 6l-2.2.8A2 2 0 0 0 6.8 8L6 10.2 5.2 8A2 2 0 0 0 4 6.8L1.8 6 4 5.2A2 2 0 0 0 5.2 4L6 2z"/>
+        </svg>
+        <span>AI Assistant</span>
+      </div>
+      <div class="assistant-dock__actions">
+        <button class="assistant-dock__btn" type="button" title="New chat" (click)="newChat()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button class="assistant-dock__btn ax-history-toggle" type="button" title="Chat history" (click)="toggleChatHistory()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/>
+          </svg>
+        </button>
+        <button class="assistant-dock__btn" type="button" title="Close" (click)="toggleChat()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <app-assistant-panel class="assistant-dock__body"></app-assistant-panel>
+  </aside>
+
+  <!-- Transient status toasts (save/compile/build outcomes, etc.) -->
+  <app-toast-host></app-toast-host>
+
+  <!-- Floating assistant toggle (hidden while the panel is open, and on pages where
+       the Assistant is disallowed such as the Dashboard — SC-2685). Draggable:
+       press-and-drag to reposition, click to open the chat. -->
+  <button
+    class="assistant-fab"
+    type="button"
+    title="AI Assistant (drag to move)"
+    *ngIf="!chatOpen && chatAllowed"
+    [style.right.px]="fabPos?.right ?? null"
+    [style.bottom.px]="fabPos?.bottom ?? null"
+    (pointerdown)="startFabDrag($event)"
+    (pointermove)="onFabDrag($event)"
+    (pointerup)="endFabDrag($event)"
+    (pointercancel)="endFabDrag($event)"
+    (click)="onFabClick()"
+  >
+    <!-- Icon FIRST + label after, so hovering reads "{icon} AI Assistant". The
+         button is positioned by `right`, so widening it on hover extends the LEFT
+         edge leftward — the icon appears to slide left while the right edge stays. -->
+    <svg class="assistant-fab__icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M14 2.5l1.9 5.1a4 4 0 0 0 2.4 2.4l5.2 2-5.2 2a4 4 0 0 0-2.4 2.4L14 21.5l-1.9-5.1a4 4 0 0 0-2.4-2.4l-5.2-2 5.2-2a4 4 0 0 0 2.4-2.4L14 2.5z"/>
+      <path d="M6 2l.8 2.2a2 2 0 0 0 1.2 1.2L10.2 6l-2.2.8A2 2 0 0 0 6.8 8L6 10.2 5.2 8A2 2 0 0 0 4 6.8L1.8 6 4 5.2A2 2 0 0 0 5.2 4L6 2z"/>
+    </svg>
+    <span class="assistant-fab__label">AI Assistant</span>
+  </button>
+
+</div>

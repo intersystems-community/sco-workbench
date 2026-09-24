@@ -1,0 +1,79 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.others-main {
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 760px;
+}
+
+.others-intro {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #3a3a3c;
+  margin: 0;
+}
+
+.others-rule {
+  border: none;
+  border-top: 1px solid #e8e8ed;
+  margin: 0;
+}
+
+.others-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.others-feature-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.others-feature-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.others-feature-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.2px;
+}
+
+.others-feature-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: #888;
+  margin-top: 2px;
+}
+
+.others-feature-desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #3a3a3c;
+  margin: 0;
+}
+
+.others-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0066cc;
+  text-decoration: none;
+}
+.others-link:hover { text-decoration: underline; }
+.others-link .ext-icon { width: 11px; height: 11px; flex-shrink: 0; }

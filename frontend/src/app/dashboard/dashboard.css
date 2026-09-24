@@ -1,0 +1,54 @@
+.db {
+  display: flex; flex-direction: column;
+  gap: 12px; padding: 12px;
+  height: 100%; min-height: 0;
+  overflow: hidden; background: var(--db-canvas);
+}
+
+/* Toolbar above the tiles — Add tile button. */
+.db__toolbar {
+  display: flex; align-items: center; gap: 8px;
+  flex: 0 0 auto; padding: 0 2px;
+}
+.db__spacer { flex: 1 1 auto; }
+
+.db__btn {
+  font-size: 12px; padding: 4px 12px; cursor: pointer;
+  border: 1px solid var(--db-border); border-radius: 6px;
+  background: var(--db-surface); color: var(--db-text);
+}
+.db__btn:hover:not(:disabled) { background: var(--db-canvas); }
+.db__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.db__btn--primary { color: #fff; background: #0066cc; border-color: #0066cc; }
+.db__btn--primary:hover:not(:disabled) { background: #0055aa; }
+
+/* Status region — visually subtle, but always in the DOM for aria-live. Empty
+   text collapses its height so it takes no space until something is announced. */
+.db__status {
+  flex: 0 0 auto; margin: 0; padding: 0 2px;
+  font-size: 12px; color: var(--db-text-secondary);
+  min-height: 0;
+}
+.db__status:empty { display: none; }
+
+.db__load-error {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 12px; border-radius: 6px;
+  color: var(--db-danger); background: var(--db-danger-surface);
+  border: 1px solid var(--db-danger-border); font-size: 13px;
+}
+
+/* Scroll region holding the grid (or the empty-state). */
+.db__body {
+  flex: 1 1 auto; min-height: 0;
+  overflow: auto;
+}
+
+.db__empty {
+  height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; text-align: center; color: var(--db-text-secondary);
+}
+.db__empty-title { font-size: 15px; font-weight: 600; color: var(--db-text); margin: 0; }
+.db__empty-hint { font-size: 13px; margin: 0; }

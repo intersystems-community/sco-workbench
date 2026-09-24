@@ -1,0 +1,336 @@
+/* ── Shell layout ────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  font-family: SF Pro Text, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  color: #1d1d1f;
+  background: #f5f5f7;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+.sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  /* A lighter slate than the near-black it was (#272729). Originally to keep the
+     InterSystems logo's navy half legible; the logo has since gone, but the slate
+     stayed — it reads softer behind the nav than the near-black did. */
+  background: #3a3f4b;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-right: 1px solid #000;
+}
+
+.sidebar-title {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.374px;
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid #3a3a3c;
+}
+
+/* Brand banner pinned at the top of the sidebar — wordmark only, no logo chip. */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+.sidebar-brand__name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Version + attribution pinned at the very bottom of the sidebar. */
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-version {
+  color: #b0b4bd;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+}
+
+/* Secondary to the version line above it: smaller and dimmer, and it wraps rather
+   than overflow the sidebar's fixed width.
+   SIZED TO TWO LINES: the sidebar is 200px with 20px of padding each side, so this
+   has 160px to work with. At 11px the longest run ("InterSystems supply chain
+   team") measured ~160px — right on the boundary, so it spilled to a third line.
+   10px with a hair of negative tracking lands it near 143px, leaving enough slack
+   that the break doesn't depend on exact font metrics. `balance` then splits the
+   two lines evenly instead of leaving an orphan. */
+.sidebar-credit {
+  margin-top: 4px;
+  color: #8a8f99;
+  font-size: 10px;
+  letter-spacing: -0.1px;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.nav-item {
+  padding: 7px 20px;
+  color: #cccccc;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.224px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-item--active {
+  color: #ffffff;
+  border-left-color: var(--db-accent);
+  background: color-mix(in srgb, var(--db-accent) 15%, transparent);
+}
+
+/* A group heading ("Getting Started", "Features") reads exactly like the top-level
+   pages around it — same size, weight, colour and padding, inherited from .nav-item —
+   but it goes nowhere when clicked, so it doesn't offer a pointer or a hover
+   highlight that would suggest otherwise. */
+.nav-item--parent {
+  cursor: default;
+}
+
+.nav-item--parent:hover {
+  color: #cccccc;
+  background: none;
+}
+
+/* Children sit indented under their heading, one step smaller than a top-level
+   page so the hierarchy is readable at a glance. */
+.nav-item--child {
+  padding: 6px 20px 6px 32px;
+  font-size: 15px;
+  color: #aaaaaa;
+}
+
+/* Needed because .nav-item--child is declared after .nav-item--active and would
+   otherwise win the (equal-specificity) colour on the selected child. */
+.nav-item--child.nav-item--active {
+  color: #ffffff;
+}
+
+/* ── Main content ────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  /* min-width:0 lets this flex child actually SHRINK when the assistant dock
+     opens; without it, a flex item won't go below its content's intrinsic width,
+     so the content (and the ER diagram) overflowed under the dock. */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Shared icon button ──────────────────────────────────────── */
+.icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #7a7a7a;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.icon-btn:hover {
+  color: #1d1d1f;
+  background: #f5f5f7;
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+.icon-tooltip {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #1d1d1f;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -0.12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.icon-wrap:hover .icon-tooltip {
+  opacity: 1;
+}
+
+/* ── Docked AI assistant panel ───────────────────────────────── */
+/* A flex sibling of .content: giving it an explicit width lets .content
+   (flex:1) shrink so the panel pushes the workbench rather than covering it. */
+.assistant-dock {
+  position: relative;
+  flex-shrink: 0;
+  height: 100vh;
+  min-width: 340px;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-left: 1px solid #e0e0e0;
+  box-shadow: rgba(0, 0, 0, 0.08) -4px 0 24px 0;
+  z-index: 900;
+}
+
+/* Closed: fully removed from the flex layout (same visual result as *ngIf), but
+   the panel COMPONENT stays mounted so background sessions keep streaming. */
+.assistant-dock--closed { display: none; }
+
+/* Left-edge grab strip for resizing. */
+.assistant-dock__resize {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 2;
+  touch-action: none;
+}
+.assistant-dock__resize:hover {
+  background: rgba(0, 102, 204, 0.18);
+}
+
+.assistant-dock__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 12px 16px;
+  border-bottom: 1px solid #e3e6ea;
+  flex-shrink: 0;
+}
+
+.assistant-dock__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: #1d1d1f;
+}
+.assistant-dock__mark { width: 16px; height: 16px; color: #0066cc; flex-shrink: 0; }
+
+.assistant-dock__actions { display: flex; align-items: center; gap: 2px; }
+.assistant-dock__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #656d76;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.assistant-dock__btn:hover { color: #1d1d1f; background: #f5f5f7; }
+.assistant-dock__btn:active { transform: scale(0.95); }
+
+.assistant-dock__body { flex: 1; min-height: 0; display: block; }
+
+/* ── Floating toggle (FAB) ───────────────────────────────────── */
+/* A pill that reads as a 52px circle at rest and grows on hover to reveal an
+   "AI Assistant" label to the RIGHT of the icon. The button is positioned by
+   `right`, so widening it extends the LEFT edge leftward — the icon appears to
+   slide left while the right edge stays anchored, reading "{icon} AI Assistant". */
+.assistant-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* icon on the left; label reveals to its right */
+  background: linear-gradient(135deg, #4a90e2 0%, #0066cc 55%, #0047a3 100%);
+  border: none;
+  border-radius: 26px;
+  color: #ffffff;
+  cursor: grab;
+  z-index: 1000;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: rgba(0, 0, 0, 0.24) 0 4px 16px 0;
+  transition: box-shadow 0.15s, transform 0.12s;
+  /* Let pointer events drive dragging instead of the browser scrolling/panning. */
+  touch-action: none;
+}
+/* Fixed 52px icon slot — the icon never resizes as the label expands. */
+.assistant-fab__icon {
+  width: 52px;
+  flex-shrink: 0;
+}
+/* Collapsed by default; expands smoothly on hover to show the label. */
+.assistant-fab__label {
+  max-width: 0;
+  opacity: 0;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  padding-right: 0;
+  transition: max-width 0.25s ease, opacity 0.2s ease, padding-right 0.25s ease;
+}
+.assistant-fab:hover {
+  box-shadow: rgba(0, 0, 0, 0.3) 0 6px 20px 0;
+}
+.assistant-fab:hover .assistant-fab__label {
+  max-width: 120px;
+  opacity: 1;
+  padding-right: 20px;
+}
+.assistant-fab:active { cursor: grabbing; transform: scale(0.94); }
+
+
+/* ── View fill (non-grid views) ─────────────────────────────── */
+.view-fill {
+  flex: 1;
+  min-width: 0; /* allow the active feature view to shrink with .content */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+

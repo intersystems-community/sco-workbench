@@ -1,0 +1,99 @@
+/* frontend/src/app/dashboard/table-builder.css
+   The table BUILDER — the picker half of the retired table-panel, extracted so the
+   tile editor (Task 12) can host it. Just the table dropdown (with up-front row
+   counts + populated-first ordering) and its live preview. Ported from the deleted
+   table-panel.css (Task 14): same --db-* token vocabulary, `.tp__*` renamed to
+   `.tb__*`. Layout-only reflow to a single column below 640px. */
+/* Fill the bounded dialog body (.te-body is already flex-column; min-height:0; overflow:auto),
+   so the preview can pin near the top and the column list scrolls internally instead of pushing
+   the preview below the fold. Only THIS component opts in — cube/KPI hosts have no such rule, so
+   they keep natural-flow scrolling byte-identically (tile-editor.* untouched). Mirrors the
+   fill-the-bounded-parent trick table-tile-view.ts:37 uses one level down. */
+:host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+
+.tb { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.tb > .db-builder-section { flex: 0 0 auto; }   /* Table picker: compact, top */
+
+/* The picker wrapper: the section title (.db-builder-section-title) IS the label now, so the
+   field carries no repeated label span (SC-2665 label-collapse) — same as the Columns fieldset,
+   which names itself once via its <legend>. */
+.tb__field { display: flex; flex-direction: column; gap: 4px; }
+
+.tb__error {
+  padding: 10px 12px; margin: 0;
+  color: var(--db-danger); background: var(--db-danger-surface);
+  border: 1px solid var(--db-danger-border); border-radius: 4px; font-size: 12px;
+}
+
+/* The column control. Rows are demarcated with a bottom border — matching the data-grid
+   in the same modal (data-grid.css) — so each label reads as one bounded band bound to its
+   own arrows (Gestalt common region). Without it the ▲▼ of adjacent rows crowd together and
+   the label-to-arrow association is ambiguous. */
+.tb__columns { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--db-border); border-radius: 4px; padding: 4px 0; }
+.tb__col-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 8px; border-bottom: 1px solid var(--db-border);
+}
+.tb__col-row:last-child { border-bottom: 0; }
+.tb__col-row--dragover { border-top: 2px solid var(--db-accent); }
+
+/* The grip is the ONLY draggable target (not the whole row) so drag doesn't fight the
+   label's click-to-toggle. */
+.tb__col-grip { cursor: grab; color: var(--db-text-secondary); font-size: 12px; line-height: 1; user-select: none; }
+.tb__col-grip:active { cursor: grabbing; }
+
+/* The label IS the toggle — make that legible: pointer + a hover shade so "click = on/off"
+   is expected, not a surprise (the checkbox alone under-advertised the whole-label target). */
+.tb__col-check {
+  display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;
+  font-size: 13px; color: var(--db-text); cursor: pointer; border-radius: 3px; padding: 2px 4px;
+}
+.tb__col-check:hover { background: var(--db-canvas); }
+.tb__col-check > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb__col-move { border: 1px solid var(--db-border); border-radius: 4px; background: var(--db-surface); color: var(--db-text); cursor: pointer; font-size: 10px; padding: 1px 6px; }
+.tb__col-move:disabled { color: var(--db-text-disabled); cursor: default; }
+
+/* The ONE internal scroller: only the selected-column rows scroll here, so the fieldset can fill
+   the remaining height while the Add trigger + its absolutely-positioned popover stay OUTSIDE this
+   overflow:auto region (never clipped). */
+.tb__col-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+/* The Add-column affordance: a single trigger inside the fieldset padding, anchoring a
+   filterable popover of the available columns. Echoes the tile actions popover
+   (tile-host.css .tile__menu): same --db-* tokens, border, shadow, real <button>s. The
+   list is height-capped and scrolls internally so a long pool never grows the modal. */
+.tb__add { position: relative; padding: 4px 8px 0; }
+.tb__add-btn {
+  font-size: 12px; padding: 4px 8px; cursor: pointer;
+  border: 1px dashed var(--db-border); border-radius: 4px;
+  background: transparent; color: var(--db-text-secondary);
+}
+.tb__add-btn:hover, .tb__add-btn[aria-expanded="true"] { color: var(--db-text); border-style: solid; background: var(--db-canvas); }
+.tb__add-menu {
+  position: absolute; left: 8px; right: 8px; top: 100%; z-index: 5; margin-top: 4px;
+  background: var(--db-surface); color: var(--db-text);
+  border: 1px solid var(--db-border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 6px; display: flex; flex-direction: column; gap: 6px;
+}
+.tb__add-filter {
+  font-size: 13px; padding: 4px 8px;
+  border: 1px solid var(--db-border); border-radius: 4px;
+  background: var(--db-surface); color: var(--db-text);
+}
+.tb__add-list { display: flex; flex-direction: column; max-height: 220px; overflow-y: auto; }
+.tb__add-item {
+  text-align: left; font-size: 13px; padding: 5px 8px; cursor: pointer;
+  border: none; border-radius: 4px; background: transparent; color: var(--db-text);
+}
+.tb__add-item:hover { background: var(--db-canvas); }
+.tb__add-empty { margin: 0; padding: 5px 8px; font-size: 12px; color: var(--db-text-secondary); }
+
+/* The live preview reuses the table tile so what you build is what the tile shows.
+   The tile view now fills its host (:host{height:100%}, redesign R8), so the preview
+   must give it a definite height for the data-grid's internal scroll chain to resolve
+   — otherwise the grid collapses. clamp(220px, 42vh, 380px) keeps the pinned preview
+   bounded (never taller than 380px, never shorter than 220px) so the columns list below
+   it stays reachable without the preview being pushed off the fold. */
+.tb__preview { display: flex; flex-direction: column; min-height: 0; flex: 0 0 auto; }
+.tb__preview > app-table-tile-view { height: clamp(220px, 42vh, 380px); flex: none; }

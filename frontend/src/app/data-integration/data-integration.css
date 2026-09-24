@@ -1,0 +1,1423 @@
+:host {
+  display: block;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.di-page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Left panel ──────────────────────────────────────────────── */
+.di-list-panel {
+  /* 260px — the same column width as the Cube and KPI list panels, so switching
+     features doesn't shift the layout. */
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.count { font-weight: 400; color: #888; }
+
+/* Collapse the list panel — a plain icon button (no border/background). */
+.list-collapse-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+.list-collapse-btn:hover { color: #1d1d1f; }
+
+/* Collapsed state takes NO column width: a thin strip pinned to the left edge that
+   reveals a floating expand arrow only when the user hovers it. */
+.list-hover-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 14px;
+  z-index: 5;
+}
+.list-expand-btn {
+  position: absolute;
+  top: 10px;
+  left: 6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.list-expand-btn:hover { color: #1d1d1f; }
+
+/* When the list is collapsed, indent the main panel so its content clears the
+   floating expand (›) button pinned to the left edge. */
+.di-page--list-collapsed .di-main-panel { padding-left: 34px; }
+
+.add-btn {
+  margin-left: auto;
+  /* svg sizing below; the box itself matches the Cube/KPI add buttons exactly. */
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid #0066cc;
+  background: transparent;
+  color: #0066cc;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.add-btn:hover { background: #e8f0fb; }
+.add-btn svg { width: 12px; height: 12px; }
+
+.di-jobs-list { overflow-y: auto; flex: 1; padding: 4px 0; }
+
+/* One-line row: the name (truncates) + its lifecycle chip (never clipped), so the
+   chip stays visible regardless of the name's length and ends flush against the
+   panel's right padding. Identical geometry to .cube-item / .kpi-item. */
+.job-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+
+.job-item:hover { background: #f5f5f7; }
+.job-item--active { background: #e8f0fb; border-left-color: var(--db-accent); }
+
+.job-item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1d1d1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The list row's in-flight marker is the bare wheel: with no label to sit beside,
+   a tinted chip around it only added an empty box. It replaces the row's status chip
+   while a deploy runs, so it keeps that chip's right-edge breathing room and never
+   shrinks under a long pipeline name. */
+.job-row-spinner { flex-shrink: 0; margin-right: 2px; }
+
+/* Pending badge shown while an agent lifecycle step is in flight. The real
+   outcome (or removal) arrives via ui_report_status. Used where the badge has
+   TEXT ("working…"); the list row uses the bare spinner above. */
+.job-pending-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0055aa;
+  background: #eef4fd;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.di-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #b9d3f2;
+  border-top-color: #0066cc;
+  border-radius: 50%;
+  animation: di-spin 0.7s linear infinite;
+}
+@keyframes di-spin { to { transform: rotate(360deg); } }
+
+.deploy-btn:disabled { opacity: 0.5; cursor: default; }
+/* A disabled Deploy must not react to hover at all (no darkening). */
+.deploy-btn:disabled:hover { filter: none; }
+
+.tag-lg { font-size: 12px; padding: 3px 10px; }
+
+/* Detail header actions: Edit / Delete icon buttons + the Deploy button. */
+.detail-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* Icon action buttons — match the KPI/Cube detail-header style exactly. */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid #d8d8dd;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.icon-btn svg { width: 15px; height: 15px; }
+.icon-btn:hover:not(:disabled) { background: #e8f0fb; color: #0066cc; border-color: #0066cc; }
+.icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.icon-btn--danger:hover:not(:disabled) { background: #fdecee; color: #cf222e; border-color: #cf222e; }
+
+/* Same 30px box height as the Edit/Delete icon buttons beside it, so the three
+   controls in the header sit on one line rather than the Deploy button standing a
+   couple of pixels taller.
+   The fill is the AI Assistant FAB's gradient (workbench.css .assistant-fab): Deploy
+   is the one control on this page that hands the work to the assistant, so it carries
+   the assistant's own colour. */
+.deploy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  box-sizing: border-box;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #4a90e2 0%, #0066cc 55%, #0047a3 100%);
+  border: none;
+  border-radius: 7px;
+  padding: 0 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: filter 0.15s;
+}
+
+/* Darkened as a whole rather than swapped for a flat colour, so the gradient
+   survives the hover. */
+.deploy-btn:hover { filter: brightness(0.92); }
+
+.di-empty { padding: 16px; font-size: 12px; color: #bbb; font-style: italic; }
+
+/* ── Right main panel ────────────────────────────────────────── */
+.di-main-panel {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: #f2f2f7;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Data Integration intro panel ───────────────────────────── */
+
+.di-intro {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.di-intro-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+
+.di-intro-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.di-intro-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #0066cc;
+}
+
+.di-intro-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #3a3a3c;
+  margin: 0;
+}
+
+.di-intro-text--muted {
+  color: #888;
+  font-size: 12px;
+}
+
+.di-intro-rule {
+  border: none;
+  border-top: 1px solid #e8e8ed;
+  margin: 0;
+}
+
+.di-intro-beyond {
+  background: #fafafa;
+  border: 1px solid #e8e8ed;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.di-intro-bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.di-intro-bullet-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #3a3a3c;
+}
+
+.di-intro-bullet-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0066cc;
+  opacity: 0.5;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.di-intro-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.di-intro-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e8e8ed;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.di-intro-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0066cc;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.di-intro-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.di-intro-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.di-intro-step-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #666;
+}
+
+.di-intro-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #f5f9ff;
+  border: 1px solid #c8ddf5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #2a4a70;
+  margin-top: 4px;
+}
+
+.di-intro-tip svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  stroke: #0066cc;
+  margin-top: 1px;
+}
+
+.di-intro-link { color: #0066cc; text-decoration: none; }
+.di-intro-link:hover { text-decoration: underline; }
+
+/* ── Job detail ──────────────────────────────────────────────── */
+.di-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  max-width: 1000px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.detail-header-left { flex: 1; min-width: 0; }
+
+.detail-name-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+
+.detail-name { font-size: 17px; font-weight: 600; color: #1d1d1f; margin: 0; }
+
+.detail-meta { font-size: 12px; color: #888; }
+
+.detail-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+/* "Tested / Not tested" indicator next to the Connection Details title. */
+.conn-tested-badge {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: none;
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+.conn-tested-badge--ok { background: #e6f4ea; color: #2e7d32; }
+
+/* Lifecycle status chip (Draft / Ready / Deployed) on a list row.
+   Deliberately identical to the Cube list's .cube-status-tag and the KPI list's
+   .kpi-tag--draft — same size, weight, padding, radius and palette — so the three
+   feature lists read as one system. inline-flex + centered so the chip's box lines
+   up with the row's text baseline instead of sitting a pixel high (the old
+   inline-block + vertical-align was a no-op inside the flex row). */
+.di-status-tag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.5;
+  /* "Ready to Deploy" is three words — it must stay on one line and push the name's
+     ellipsis instead of wrapping the chip onto two. */
+  white-space: nowrap;
+}
+
+/* Draft = amber (Cube/KPI "draft"), Ready = blue (Cube "compiled" — configured but
+   not yet in IRIS), Deployed = green (Cube "built"). */
+.di-status-tag--draft    { background: #fff8e1; color: #b45e00; }
+.di-status-tag--ready    { background: #e8f0fb; color: #0055aa; }
+.di-status-tag--deployed { background: #e6f4ea; color: #2e7d32; }
+
+/* Two-column key/value summary list used in the detail cards. */
+.summary-list {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 12px;
+}
+.summary-list dt { color: #888; }
+.summary-list dd { margin: 0; color: #1d1d1f; word-break: break-all; }
+
+.target-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.target-chip {
+  font-size: 12px;
+  font-weight: 600;
+  background: #e8f0fb;
+  color: #0066cc;
+  border-radius: 5px;
+  padding: 3px 10px;
+}
+
+/* ── Shared mapping table (detail + editor) ──────────────────── */
+.mapping-table, .mapping-editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.mapping-table th, .mapping-editor-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #888;
+  padding: 0 10px 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.mapping-table td {
+  padding: 5px 10px 5px 0;
+  border-bottom: 1px solid #f9f9f9;
+  color: #1d1d1f;
+  vertical-align: middle;
+}
+
+.mapping-table tr:last-child td { border-bottom: none; }
+/* Type cell: drop the badge's gray pill fill + bold so it reads as a plain cell. */
+.mapping-table td.type-badge { background: transparent; font-weight: normal; }
+
+.row-unmapped td { color: #bbb; }
+.row-mapped td   { color: #1d1d1f; }
+
+/* Field Mappings (detail view): cap the visible table at 10 rows and scroll
+   the rest, keeping the header pinned. Row height is fixed so "10 rows" is
+   deterministic regardless of content. Uses border-collapse: separate (like
+   .mapping-grid) so the sticky header keeps its bottom border while scrolling. */
+.mapping-table-scroll {
+  max-height: 300px;   /* header (~20px) + 10 rows × 28px */
+  overflow-y: auto;
+}
+.mapping-table-scroll .mapping-table { border-collapse: separate; border-spacing: 0; }
+.mapping-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;    /* opaque so scrolled rows don't show through the header */
+}
+.mapping-table-scroll tbody tr { height: 28px; }
+
+.mono  { font-family: ui-monospace, monospace; font-size: 11px; }
+.small { font-size: 11px; }
+
+.type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
+  background: #f0f0f5;
+  color: #555;
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.sample-val { font-size: 11px; color: #888; font-family: ui-monospace, monospace; }
+
+/* ── Wizard ──────────────────────────────────────────────────── */
+.di-wizard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f2f2f7;
+  min-height: 0;
+}
+
+/* Step bar */
+.step-bar {
+  display: flex;
+  align-items: center;
+  padding: 14px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #888;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.step-item--active .step-circle { background: #0066cc; color: #ffffff; }
+.step-item--done   .step-circle { background: #2e7d32; color: #ffffff; }
+
+.step-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  white-space: nowrap;
+}
+
+.step-item--active .step-label { color: #0066cc; font-weight: 600; }
+.step-item--done   .step-label { color: #2e7d32; }
+
+.step-connector {
+  flex: 1;
+  min-width: 24px;
+  max-width: 48px;
+  height: 1px;
+  background: #e0e0e0;
+  margin: 0 8px;
+}
+
+.step-spacer { flex: 1; }
+
+/* Cancel — quiet and BORDERLESS (the border comes from .wizard-btn as transparent),
+   matching the Cube edit form's Cancel: an outlined box would give the discard action
+   the same visual weight as the actions it discards. */
+.wizard-cancel-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  background: transparent;
+  padding: 7px 16px;
+  cursor: pointer;
+}
+
+.wizard-cancel-btn:hover:not(:disabled) { background: #f0f0f0; }
+.wizard-cancel-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Wizard content row (steps + chat) */
+.wizard-content-row {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wizard-steps-col {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wizard body */
+.wizard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wizard-body--mapping { gap: 12px; }
+
+.wizard-section { display: flex; flex-direction: column; gap: 10px; }
+
+.wizard-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+}
+
+/* Source type grid */
+.source-type-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.source-type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100px;
+  padding: 14px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.source-type-card:hover { background: #f5f5f7; border-color: #bbb; }
+.source-type-card--active { border-color: var(--db-accent); background: #e8f0fb; }
+
+.source-type-card--disabled {
+  background: #f5f5f7;
+  border-color: #ececec;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.source-type-card--disabled:hover { background: #f5f5f7; border-color: #ececec; }
+.source-type-card--disabled .source-type-icon,
+.source-type-card--disabled .source-type-label { color: #aaa; }
+
+.source-type-icon { font-size: 24px; }
+.source-type-label { font-size: 11px; font-weight: 600; color: #444; text-align: center; }
+.source-type-unsupported { font-size: 9px; color: #aaa; text-align: center; }
+.source-type-note { font-size: 9px; color: #888; text-align: center; }
+
+/* Config grid */
+.config-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px 12px;
+  align-items: center;
+  max-width: 520px;
+}
+
+/* Prominent required-field banner shown after a blocked Next — same red
+   treatment as the cube/KPI forms' `.form-error`, so a missing field is obvious. */
+.di-form-error {
+  font-size: 13px;
+  color: #cc3300;
+  background: #fff3f0;
+  border: 1px solid #f5c6c0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  /* Constrain to the form column width (matches .config-grid) so the banner
+     lines up with the fields instead of spanning the whole page. */
+  max-width: 520px;
+}
+
+.test-result { display: block; font-size: 12px; font-weight: 600; }
+.test-result--success { color: #2e7d32; }
+.test-result--error   { color: #cc3300; }
+
+/* In-button spinner (Test Connection / Save while a request is in flight). Drawn in
+   currentColor — the buttons are outlined now, so a white spinner would be invisible
+   on them. Same construction as the Cube/KPI form's .btn-spinner. */
+.test-spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: di-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Wizard actions */
+.wizard-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-top: 4px;
+}
+
+/* Wizard action buttons — the Cube edit form's button system, class for class
+   (.form-btn / .form-btn--outline / .form-cancel-btn in bi-cubes.css), so the two
+   edit pages present the same controls: one outlined blue style for the actions, and
+   a quiet borderless Cancel.
+   Width is deliberately NOT equalized — each button is as wide as its own label plus
+   the shared padding (a common min-width padded "Cancel" and "← Back" out with dead
+   space). */
+.wizard-btn {
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 7px;
+  padding: 7px 18px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-sizing: border-box;
+}
+.wizard-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.wizard-btn--outline { color: #0066cc; background: #ffffff; border-color: #0066cc; }
+.wizard-btn--outline:hover:not(:disabled) { background: #eef5fd; }
+
+/* Step layout (left + right) */
+.step-layout {
+  display: flex;
+  gap: 20px;
+  min-height: 0;
+  flex: 1;
+}
+
+.step-left {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-right {
+  flex: 1;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.step-right--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #bbb;
+}
+
+/* Dataset list */
+.ds-loading { font-size: 12px; color: #888; }
+
+.ds-list { display: flex; flex-direction: column; gap: 4px; }
+
+.ds-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #333;
+  background: #ffffff;
+  border: 1px solid #e8e8ed;
+}
+
+.ds-item:hover { background: #f5f5f7; border-color: #ccc; }
+.ds-item--active { background: #e8f0fb; border-color: var(--db-accent); color: var(--db-accent); font-weight: 600; }
+/* Folders navigate and CSV rows select on row-click; only non-CSV files are inert
+   (the .ds-item--disabled rule below keeps them cursor:default). */
+
+/* Selection radio + a matching spacer so folder/other rows align with CSV rows. */
+.ds-radio { margin: 0; cursor: pointer; accent-color: #0066cc; }
+.ds-radio-spacer { display: inline-block; width: 13px; }
+
+.ds-icon { font-size: 14px; }
+.ds-empty { font-size: 12px; color: #bbb; font-style: italic; }
+
+/* Non-selectable (non-CSV) file: shown but greyed out and not clickable. */
+.ds-item--disabled {
+  cursor: default;
+  color: #aaa;
+  background: #fafafa;
+}
+.ds-item--disabled:hover { background: #fafafa; border-color: #e8e8ed; }
+
+/* ── FTP remote file browser — a self-contained navigation window ── */
+.ftp-browser {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Toolbar: Up control + breadcrumb, on a subtle tinted header. */
+.ftp-browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #f7f8fa;
+  border-bottom: 1px solid #ececf0;
+}
+
+.ftp-up-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  color: #555;
+  background: #fff;
+  border: 1px solid #d5d5da;
+  border-radius: 6px;
+  /* Icon-only (no "Up" label), so the padding is near-symmetric — 10px sides on a
+     13px glyph reads as a stray wide box next to the breadcrumb. */
+  padding: 5px 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ftp-up-btn:hover:not(:disabled) { background: #f0f0f0; border-color: #c0c0c6; }
+.ftp-up-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Breadcrumb: clickable ancestor segments separated by chevrons. */
+.ftp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.ftp-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #0066cc;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.ftp-crumb:hover { background: #eaf1fb; }
+.ftp-crumb--current {
+  color: #1d1d1f;
+  font-weight: 600;
+  cursor: default;
+}
+.ftp-crumb--current:hover { background: transparent; }
+.ftp-crumb-icon { font-size: 12px; }
+.ftp-crumb-sep { color: #bbb; font-size: 12px; user-select: none; }
+
+/* Listing area inside the window. */
+.ftp-browser-body { padding: 8px; max-height: 260px; overflow-y: auto; }
+.ftp-browser-status { padding: 6px 2px; }
+.ftp-entry-tag { margin-left: auto; font-size: 10px; color: #bbb; font-style: italic; }
+
+/* CSV preview: column name over its data type, then sample rows. */
+/* White surface around the preview table so it reads as a card on the gray
+   wizard body (visual consistency with the app's other white surfaces). A wide
+   CSV scrolls horizontally inside the card rather than overflowing the step. */
+.csv-preview-wrap {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+.csv-preview-table .csv-col-name { font-size: 12px; color: #1d1d1f; }
+.csv-preview-table .csv-col-type {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #0066cc;
+}
+
+/* Schema table */
+.schema-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+.schema-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #888;
+  padding: 0 12px 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.schema-table td {
+  padding: 5px 12px 5px 0;
+  border-bottom: 1px solid #f9f9f9;
+  vertical-align: middle;
+}
+
+.schema-table tr:last-child td { border-bottom: none; }
+
+/* Object list (step 3) */
+.obj-search-row { margin-bottom: 4px; }
+
+.obj-loading { font-size: 12px; color: #888; }
+
+.obj-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.obj-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #333;
+}
+
+.obj-item:hover { background: #f5f5f7; }
+.obj-item--selected { background: #e8f0fb; color: var(--db-accent); font-weight: 600; }
+
+.obj-checkbox { font-size: 14px; flex-shrink: 0; }
+
+/* Selected targets */
+.selected-targets-empty { font-size: 12px; color: #bbb; font-style: italic; margin-bottom: 8px; }
+
+.selected-target-card {
+  border: 1px solid #e0e0e8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.selected-target-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+.selected-target-name { font-size: 13px; font-weight: 600; color: #1d1d1f; }
+
+.remove-target-btn {
+  font-size: 11px;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.remove-target-btn:hover { color: #cc3300; background: #fff0f0; }
+
+.selected-target-attrs { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.attr-pill {
+  font-size: 10px;
+  background: #f0f0f5;
+  color: #555;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: ui-monospace, monospace;
+}
+
+.attr-pill--required { background: #fff3e0; color: #b45e00; font-weight: 600; }
+
+.attr-pill-more { font-size: 10px; color: #aaa; padding: 1px 4px; }
+
+/* ── Mapping editor ───────────────────────────────────────────── */
+.mapping-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
+.mapping-target-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+
+.target-tab {
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  background: #f5f5f7;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.target-tab--active { background: #e8f0fb; color: var(--db-accent); border-color: var(--db-accent); font-weight: 600; }
+.target-tab:hover:not(.target-tab--active) { background: #ebebf0; }
+
+/* Mapping — Section 1: source data columns */
+.mapping-section { margin-bottom: 20px; }
+.mapping-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 10px;
+}
+.header-row-option { margin-bottom: 10px; }
+/* White surface + scroll for the SQL "Columns" list: caps the visible table at
+   10 rows and scrolls the rest, with the header pinned. Row height is fixed so
+   the 10-row cap is deterministic. border-collapse: separate keeps the sticky
+   header's bottom border from scrolling away (same reason as .mapping-grid). */
+.source-columns-wrap {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 6px 14px;
+}
+/* Scroll/sticky context lives here — kept free of vertical padding so the
+   sticky header pins flush to the top with no gap or scroll-through. The card
+   padding stays on the outer wrapper (mirrors .ftp-browser + .ftp-browser-body). */
+.source-columns-scroll {
+  max-height: 356px;   /* header (~36px) + 10 rows × 32px */
+  overflow-y: auto;
+}
+.source-columns-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.source-columns-table th {
+  position: sticky;
+  top: 0;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fff;    /* opaque so scrolled rows don't show through the header */
+}
+.source-columns-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0f0f0;   /* subtle per-row separator, like the CSV preview */
+}
+.source-columns-table tbody tr:last-child td { border-bottom: none; }
+.source-columns-table tbody tr { height: 32px; }
+/* Data Type cell: drop the badge's gray pill fill so it reads as a plain cell. */
+.source-columns-table td.type-badge { background: transparent; }
+
+.target-class-select { max-width: 320px; }
+
+/* Deploy request/response panels */
+.deploy-json {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #1d1d1f;
+  background: #f5f5f7;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.deploy-result--ok  { border-left: 3px solid #34c759; }
+.deploy-result--err { border-left: 3px solid #ff3b30; }
+
+/* ── Section 3: Apple-style field-mapping card ───────────────── */
+.mapping-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.auto-map-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: #0066cc;
+  border: none;
+  border-radius: 980px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.05s ease;
+}
+.auto-map-btn:hover:not(:disabled) { background: #0055aa; }
+.auto-map-btn:active:not(:disabled) { transform: scale(0.96); }
+.auto-map-btn:disabled { opacity: 0.55; cursor: default; }
+
+.mapping-empty {
+  font-size: 12px;
+  color: #86868b;
+  padding: 16px 0;
+}
+
+.mapping-card {
+  background: #fbfbfd;
+  border: 1px solid #e8e8ed;
+  border-radius: 14px;
+  padding: 6px 6px 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+/* Keep the mapping table inside a fixed-height, vertically-scrollable area so a
+   long column list doesn't push the page down indefinitely. The grid's <thead>
+   is position: sticky, so the header stays pinned to the top of this scroller. */
+/* Show ~10 property rows (plus the sticky header); anything beyond scrolls. */
+.mapping-grid-scroll {
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.mapping-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.mapping-grid thead th {
+  position: sticky;
+  top: 0;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #86868b;
+  background: #fbfbfd;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #ececf0;
+}
+
+.mapping-grid tbody td {
+  padding: 8px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f3;
+}
+.mapping-grid tbody tr:last-child td { border-bottom: none; }
+
+/* Row status via a soft colored left edge, not a full fill. */
+.mapping-grid tbody tr { transition: background 0.12s ease; }
+.mapping-grid tbody tr:hover td { background: #f5f5f7; }
+.mapping-grid tbody tr.row-mapped td:first-child   { box-shadow: inset 3px 0 0 #34c759; }
+.mapping-grid tbody tr.row-unmapped td:first-child { box-shadow: inset 3px 0 0 #d2d2d7; }
+.mapping-grid tbody tr.row-mapped td   { color: #1d1d1f; }
+.mapping-grid tbody tr.row-unmapped td { color: #6e6e73; }
+
+.mapping-grid .col-arrow {
+  width: 28px;
+  text-align: center;
+  color: #c7c7cc;
+  font-size: 13px;
+}
+
+.transform-cell { display: flex; flex-direction: column; gap: 4px; }
+.transform-args { display: flex; gap: 4px; flex-wrap: wrap; }
+.transform-arg { max-width: 88px; }
+
+.mapping-card .mapping-legend {
+  padding: 12px 12px 2px;
+  gap: 18px;
+}
+
+.mapping-table-wrap {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  overflow: auto;
+  flex: 1;
+}
+
+.mapping-editor-table {
+  min-width: 900px;
+}
+
+.mapping-editor-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #f5f5f7;
+  vertical-align: middle;
+}
+
+.mapping-editor-table tr:last-child td { border-bottom: none; }
+
+.mapping-editor-table tr.row-mapped { background: #fafffe; }
+.mapping-editor-table tr.row-unmapped { background: #fffff8; }
+
+.mapping-editor-table tr:hover td { background: #f5f5f7; }
+
+.source-field-cell { font-size: 11px; font-family: ui-monospace, monospace; color: #1d1d1f; white-space: nowrap; }
+
+.col-source     { width: 160px; }
+.col-type       { width: 80px; }
+.col-target-obj { width: 130px; }
+.col-target-attr{ width: 140px; }
+.col-target-type{ width: 120px; }
+.col-transform  { width: 180px; }
+.col-validation { width: 110px; }
+.col-param      { width: 120px; }
+.col-error      { width: 110px; }
+
+.cell-select {
+  width: 100%;
+  font-size: 11px;
+  color: #1d1d1f;
+  background: #f9f9fb;
+  border: 1px solid #e8e8ed;
+  border-radius: 4px;
+  padding: 3px 5px;
+  outline: none;
+  cursor: pointer;
+}
+
+.cell-select:focus { border-color: #0066cc; background: #fff; }
+.cell-select:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+.cell-select:disabled { opacity: 0.4; cursor: default; }
+
+.cell-input {
+  width: 100%;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  color: #1d1d1f;
+  background: #f9f9fb;
+  border: 1px solid #e8e8ed;
+  border-radius: 4px;
+  padding: 3px 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cell-input:focus { border-color: #0066cc; background: #fff; }
+.cell-input:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+.cell-input:disabled { opacity: 0.4; }
+
+.mapping-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: #888;
+}
+
+.legend-mapped   { color: #2e7d32; }
+.legend-unmapped { color: #b45e00; }
+
+/* ── Shared form inputs ──────────────────────────────────────── */
+.form-input--sm     { font-size: 12px; padding: 4px 8px; }
+.form-input--wide   { max-width: 400px; }
+.form-input--narrow { max-width: 120px; }
+.form-input--xs     { max-width: 80px; }
+
+/* Placeholder shown in a select's grid slot while its options load. */
+.di-select-loading { color: #888; display: flex; align-items: center; cursor: default; }
+
+/* Red asterisk marking a required field (after Integration/Data Source Name). */
+.req { color: #d32f2f; margin-left: 2px; }
+
+/* Query-style radio group */
+.radio-row { display: flex; flex-direction: column; gap: 6px; }
+.radio-row--inline { flex-direction: row; align-items: center; gap: 18px; }
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+}
+
+/* Inline guidance note under a config grid */
+.field-note {
+  font-size: 11px;
+  color: #888;
+  line-height: 1.45;
+  max-width: 520px;
+}
+.field-note code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  background: #f0f0f2;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* A note that spans both columns inside a .config-grid, tucked under a field */
+.grid-note {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.45;
+  margin: -2px 0 4px;
+}
+
+/* Advanced-settings disclosure */
+.advanced-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0066cc;
+  cursor: pointer;
+}
+.advanced-toggle:hover { text-decoration: underline; }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+/* The filled-blue .btn-primary that used to style the wizard's actions is gone —
+   they use the Cube edit form's outlined .wizard-btn--outline now, and nothing else
+   referenced it. .btn-secondary stays: it styles the "Upload File" pickers. */
+.btn-secondary {
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  background: transparent;
+  border: 1px solid #d0d0d0;
+  border-radius: 7px;
+  padding: 7px 16px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover { background: #f0f0f0; }
+.btn-secondary:disabled { opacity: 0.5; cursor: default; }
+
+/* ── SFTP key-file upload ─────────────────────────────────────── */
+/* Sits in the config-grid value column: the button plus the uploaded file name. */
+.key-file-field { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* The real file input is hidden; the styled button proxies the click. */
+.key-file-input { display: none; }
+.key-file-btn { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.key-file-name {
+  font-size: 12px;
+  color: #2e7d32;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

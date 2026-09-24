@@ -1,0 +1,1008 @@
+<div class="kpi-page page--full" [class.kpi-page--list-collapsed]="listCollapsed">
+
+  <!-- Left: KPI list grouped by base cube -->
+  <!-- Collapsed: no column at all — a thin hover strip on the left edge reveals a
+       floating expand arrow, so the detail/form gets the full width. -->
+  <div class="list-hover-zone" *ngIf="listCollapsed">
+    <button class="list-expand-btn" (click)="toggleList()" title="Show KPI list" aria-label="Show KPI list">›</button>
+  </div>
+
+  <div class="kpi-list-panel" *ngIf="!listCollapsed">
+    <div class="panel-header">
+      <button class="list-collapse-btn" (click)="toggleList()" title="Hide KPI list" aria-label="Hide KPI list">‹</button>
+      KPIs
+      <span class="count" *ngIf="totalCount > 0">({{ totalCount }})</span>
+
+      <!-- Single "+" add control: a menu to create a new KPI or a new group. -->
+      <div class="kpi-add-wrap">
+        <!-- Geometric "+" rather than the text glyph: a "+" character sits a shade
+             below the centre of its line box, which reads as a misaligned icon in a
+             22px square. The SVG is centred by construction. -->
+        <button class="add-kpi-btn" [axGuide]="'new-kpi'" (click)="$event.stopPropagation(); toggleAddMenu()" title="Add" aria-label="Add">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>
+        </button>
+
+        <div class="kpi-add-menu" *ngIf="addMenuOpen" (click)="$event.stopPropagation()">
+          <button class="kpi-add-menu-item" (click)="addMenuNewKpi()">
+            <span class="kpi-add-menu-icon">＋</span> New KPI
+          </button>
+          <button class="kpi-add-menu-item" (click)="addMenuNewGroup()">
+            <span class="kpi-add-menu-icon">🗂</span> New group
+          </button>
+        </div>
+
+        <!-- Floating group-name input (popover; no layout gap in the list). -->
+        <div class="kpi-add-group-pop" *ngIf="addingGroup" (click)="$event.stopPropagation()">
+          <input
+            class="new-group-input"
+            [(ngModel)]="newGroupName"
+            placeholder="New group name…"
+            autofocus
+            (keydown.enter)="confirmAddGroup()"
+            (keydown.escape)="cancelAddGroup()"
+          />
+          <div class="kpi-add-group-actions">
+            <button class="new-group-ok" (click)="confirmAddGroup()" [disabled]="!newGroupName.trim()">Add group</button>
+            <button class="new-group-cancel" (click)="cancelAddGroup()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-error" *ngIf="loadError">{{ loadError }}</div>
+
+    <div class="kpi-groups" *ngIf="!loadError">
+      <div class="kpi-group" *ngFor="let group of groups; let groupFirst = first">
+
+        <!-- Group header is also a drop target: drag a KPI onto it to assign. -->
+        <div
+          class="group-header"
+          [class.group-header--drop]="dragOverGroup === group.name"
+          (click)="toggleGroup(group)"
+          (dragover)="onGroupDragOver(group, $event)"
+          (dragleave)="onGroupDragLeave(group)"
+          (drop)="onGroupDrop(group, $event)"
+        >
+          <span class="group-arrow">{{ group.expanded ? '▾' : '▸' }}</span>
+          <span class="group-label" [class.group-label--ungrouped]="group.name === UNGROUPED">{{ group.label }}</span>
+          <!-- Custom groups can be deleted (removes the group AND its KPIs); the
+               blank Ungrouped bucket cannot. Shown on header hover. -->
+          <button
+            *ngIf="group.name !== UNGROUPED"
+            class="group-delete-btn"
+            (click)="$event.stopPropagation(); requestDeleteGroup(group)"
+            title="Delete group and its KPIs"
+            aria-label="Delete group"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+
+        <!-- The full-name tooltip opens UPWARD (the default), so it doesn't cover the
+             row underneath and read as that row's name. The first row of the first
+             group is the one exception: above it is the scroll container's top edge,
+             which would clip an upward bubble, so that one still opens downward. -->
+        <ul class="kpi-items" *ngIf="group.expanded">
+          <li
+            *ngFor="let kpi of group.items; let first = first"
+            class="kpi-item"
+            [class.kpi-item--active]="selectedKpi?.name === kpi.name && formMode !== 'new'"
+            [class.kpi-item--dragging]="draggingKpi === kpi.name"
+            [attr.data-tooltip]="displayName(kpi)"
+            [attr.data-tooltip-pos]="groupFirst && first ? 'below' : null"
+            data-tooltip-align="start"
+            draggable="true"
+            (dragstart)="onKpiDragStart(kpi, $event)"
+            (dragend)="onKpiDragEnd()"
+            (click)="attemptSelectKpi(kpi)"
+          >
+            <span class="kpi-drag-handle" aria-hidden="true">⋮⋮</span>
+            <span class="kpi-name">{{ displayName(kpi) }}</span>
+            <span class="kpi-tag kpi-tag--draft" *ngIf="kpi.state === 'draft'">draft</span>
+          </li>
+          <li class="kpi-empty" *ngIf="group.items.length === 0">Drag a KPI here to add it to this group.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="kpi-detail-panel">
+
+    <!-- Feature intro: shown when no KPI is selected -->
+    <div class="kpi-intro" *ngIf="!selectedKpi && !formMode">
+
+      <h2 class="kpi-intro-title">Business KPI</h2>
+
+      <!-- 1. Overview -->
+      <div class="kpi-intro-section">
+        <div class="kpi-intro-section-label">Overview</div>
+        <p class="kpi-intro-text">
+          SCO enables users to define business Key Performance Indicator (KPI) to measure supply 
+          chain performance and identify issues. KPIs can include formulas, dimensional breakdowns 
+          such as supplier or region, and configurable thresholds or conditions for issue 
+          detection. KPIs run directly on SCO data, providing near-real-time results for 
+          monitoring, analysis, and decision-making.
+        </p>
+      </div>
+
+      <hr class="kpi-intro-rule" />
+
+      <!-- 2. Beyond SCO Workbench -->
+      <div class="kpi-intro-section">
+        <div class="kpi-intro-section-label">Beyond SCO Workbench</div>
+        <div class="kpi-intro-beyond">
+          <p class="kpi-intro-text">SCO Workbench covers common KPI definitions. Some advanced capabilities require working directly in SCO:</p>
+          <div class="kpi-intro-bullet-list">
+            <div class="kpi-intro-bullet-item">
+              <span class="kpi-intro-bullet-dot"></span>
+              <span>Custom KPI calculation logic beyond standard cube measures or dimensions</span>
+            </div>
+            <div class="kpi-intro-bullet-item">
+              <span class="kpi-intro-bullet-dot"></span>
+              <span>Triggering or updating KPI generated issues</span>
+            </div>
+            <div class="kpi-intro-bullet-item">
+              <span class="kpi-intro-bullet-dot"></span>
+              <span>Upcoming new KPI features, such as KPI history, trend support</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="kpi-intro-rule" />
+
+      <!-- 3. How to use -->
+      <div class="kpi-intro-section">
+        <div class="kpi-intro-section-label">How to Use</div>
+        <div class="kpi-intro-step-list">
+          <div class="kpi-intro-step">
+            <span class="kpi-intro-step-num">1</span>
+            <div class="kpi-intro-step-body">
+              <div class="kpi-intro-step-title">Explore out-of-the-box KPIs</div>
+              <div class="kpi-intro-step-desc">SCO ships with pre-built KPIs for common supply chain metrics. Select any KPI from the list on the left to inspect its definition, thresholds, and the issues it generates. Out-of-the-box KPIs are read-only.</div>
+            </div>
+          </div>
+          <div class="kpi-intro-step">
+            <span class="kpi-intro-step-num">2</span>
+            <div class="kpi-intro-step-body">
+              <div class="kpi-intro-step-title">Create a new KPI</div>
+              <div class="kpi-intro-step-desc">Click <strong>+</strong> in the left panel. Define the KPI name, select the underlying cube and measure, set dimension breakdowns, and configure thresholds. Use the AI Assistant for help selecting the right measure or structuring your thresholds.</div>
+            </div>
+          </div>
+          <div class="kpi-intro-step">
+            <span class="kpi-intro-step-num">3</span>
+            <div class="kpi-intro-step-body">
+              <div class="kpi-intro-step-title">Edit a saved KPI</div>
+              <div class="kpi-intro-step-desc">Select an existing KPI from the list to update its definition or thresholds. Changes take effect on the next KPI evaluation run.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-intro-tip">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M8 7v4M8 5.5v.5"/>
+        </svg>
+        <span>Before creating a KPI, make sure the relevant Analytics Cube exists and has the data loaded. Ask the AI Assistant if you need help choosing the right cube or measure for your metric.</span>
+      </div>
+
+    </div>
+
+    <!-- ── Create / Edit form ──────────────────────────────────── -->
+    <!-- Container-level input/change marks the form dirty (any field edit), so
+         the list badge flips to "draft" immediately and navigation auto-saves. -->
+    <div class="kpi-create-form" *ngIf="formMode" (input)="markDirty()" (change)="markDirty()">
+      <div class="form-header">
+        <h2 class="form-title">{{ formMode === 'new' ? 'New KPI' : 'Edit KPI' }}</h2>
+      </div>
+
+      <div class="form-error" #formErrorEl *ngIf="formError">{{ formError }}</div>
+
+      <!-- Basic info -->
+      <div class="form-section">
+        <div class="form-section-title">Basic Information</div>
+        <div class="form-grid">
+          <label class="form-label">Name <span class="required">*</span></label>
+          <input class="form-input" [axGuide]="'name'" [(ngModel)]="form.name" placeholder="e.g. MyKpiName" />
+
+          <label class="form-label">Label</label>
+          <input class="form-input" [axGuide]="'label'" [(ngModel)]="form.label" placeholder="Display name" />
+
+          <label class="form-label">Description</label>
+          <textarea class="form-input form-textarea" [axGuide]="'description'" [(ngModel)]="form.description" placeholder="What does this KPI measure?"></textarea>
+
+          <label class="form-label">Status</label>
+          <select class="form-input form-select" [axGuide]="'status'" [(ngModel)]="form.status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- DeepSee spec -->
+      <div class="form-section">
+        <div class="form-section-title">DeepSee Specification</div>
+        <div class="form-grid">
+          <label class="form-label">Cube <span class="required">*</span></label>
+          <select class="form-input form-select" [axGuide]="'cube'" [(ngModel)]="form.cube" (ngModelChange)="onFormCubeChange()">
+            <option value="">— select cube —</option>
+            <option *ngFor="let c of availableCubes" [value]="c">{{ c }}</option>
+          </select>
+
+          <label class="form-label">Base Object</label>
+          <div class="base-object-field" [axGuide]="'baseObject'">
+            <select class="form-input form-select"
+                    *ngIf="!baseObjectOther"
+                    [ngModel]="form.baseObject"
+                    (ngModelChange)="onBaseObjectSelectChange($event)">
+              <option value="">— select object —</option>
+              <option *ngFor="let obj of baseObjects" [value]="obj">{{ obj }}</option>
+              <option value="__other__">Other…</option>
+            </select>
+            <div class="base-object-other" *ngIf="baseObjectOther">
+              <input class="form-input" [(ngModel)]="form.baseObject" placeholder="Custom base object (SC.Core.API.Data.{name}ApiImpl)" />
+              <button type="button" class="link-btn" (click)="baseObjectOther = false; form.baseObject = ''">use list</button>
+            </div>
+            <span class="field-hint">Drives the “Related Records” listing (SC.Core.API.Data.&lt;name&gt;ApiImpl). Auto-filled from the cube’s source class.</span>
+          </div>
+
+          <label class="form-label">Measure</label>
+          <select class="form-input form-select" [axGuide]="'kpiMeasure'" [(ngModel)]="form.kpiMeasure" [disabled]="!form.cube">
+            <option value="">{{ form.cube ? '— select measure —' : '— select cube first —' }}</option>
+            <option *ngFor="let m of formCubeMeasures" [value]="m">{{ m }}</option>
+          </select>
+
+          <label class="form-label">Value Type <span class="required">*</span></label>
+          <select class="form-input form-select" [axGuide]="'valueType'" [(ngModel)]="form.valueType">
+            <option value="raw">raw (count / measure)</option>
+            <option value="percentage">percentage (numerator ÷ denominator)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- KPI + Base conditions on the left, the shared model tree in a bounded side rail on the right. -->
+      <div class="kpi-conditions-layout">
+        <div class="kpi-conditions-main">
+          <!-- Base (denominator) conditions render ABOVE KPI (numerator): the denominator is the whole
+               population and the KPI narrows it, so "whole, then part" reads correctly. HIDDEN for a raw
+               KPI (SC-2704, 2026-09-11): raw is the uncommon Value Type, so the Base/denominator section
+               is shown only for percentage to declutter the common (default raw) case. This reverses the
+               round-8 present-but-disabled shape by team decision. The save path already strips
+               baseConditions for non-percentage (kpi.ts formToDefinition), so hiding changes no payload. -->
+          <div class="form-section" data-testid="base-conditions-section" *ngIf="showBaseConditions">
+            <div class="form-section-title">
+              Base Conditions
+              <span class="section-hint">The denominator population for a percentage KPI</span>
+              <button class="form-add-row-btn" (click)="addBaseCondition()">+ Add</button>
+            </div>
+            <!-- One-line OR-vs-AND teaching hint — appears the first time a second row exists. -->
+            <p class="condition-and-hint" *ngIf="conditionShowAndHint('base')">
+              All conditions must be true (AND). To match any of several values in one field, use “is one of”.
+            </p>
+            <div class="condition-rows"
+                 (dragover)="onConditionDragOver('base', null, $event)"
+                 (drop)="onConditionDrop('base', null, $event)">
+              <ng-container *ngFor="let c of form.baseConditions; let i = index; trackBy: trackByIndex">
+              <!-- Quiet AND joiner between adjacent rows (Gestalt proximity); never above the first. -->
+              <div class="condition-and-joiner" *ngIf="i > 0" aria-hidden="true">AND</div>
+              <div class="condition-row"
+                   [class.condition-row--target]="(focusedCondition()?.list === 'base' && focusedCondition()?.i === i)
+                                                 || (dragOverCondition()?.list === 'base' && dragOverCondition()?.i === i)"
+                   (dragover)="onConditionDragOver('base', i, $event)"
+                   (dragleave)="onConditionDragLeave('base', i)"
+                   (drop)="onConditionDrop('base', i, $event)">
+                <div class="condition-controls">
+                <span class="condition-drag-handle" draggable="true" aria-hidden="true"
+                      (dragstart)="onRowDragStart('base', i, $event)" (dragend)="onRowDragEnd()"
+                      title="Drag to reorder">⋮⋮</span>
+                <div class="condition-face" tabindex="0" [axGuide]="'baseConditions.' + i"
+                     [attr.data-tooltip]="conditionIsFreeText('base', i) || conditionIsEmpty('base', i) ? null : form.baseConditions[i]"
+                     (focusin)="focusedCondition.set({ list: 'base', i })">
+                  <span class="condition-chip" *ngIf="!conditionIsFreeText('base', i)">
+                    <select class="condition-level-select"
+                            [attr.title]="conditionIsRollup('base', i) ? 'Counts all members rolled up under this level' : null"
+                            [ngModel]="conditionLevelSpec('base', i)"
+                            (ngModelChange)="setConditionLevel('base', i, $event)">
+                      <option value="" disabled hidden>Choose a field…</option>
+                      <optgroup *ngFor="let g of conditionLevelGroups()" [label]="g.dimension">
+                        <option *ngFor="let l of g.levels" [value]="l.spec">{{ l.label }}</option>
+                      </optgroup>
+                    </select>
+                    <ng-container *ngIf="conditionHasLevel('base', i)">
+                    <!-- 1.8.0 gate: only "is" / "is null" compile to MDX the shipping 1.7.3 engine runs.
+                         The rest are hidden behind advancedMdxEnabled() (mdx-feature-flags, default off). -->
+                    <select class="condition-operator"
+                            [ngModel]="conditionOperator('base', i)" (ngModelChange)="setConditionOperator('base', i, $event)">
+                      <option value="is">is</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isOneOf">is one of</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isNot">is not</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isNotOneOf">is not one of</option>
+                      <option value="isNull">is null</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isNotNull">is not null</option>
+                      <optgroup *ngIf="advancedMdxEnabled()" label="Aggregate comparison" [disabled]="!comparisonMeasuresAvailable()">
+                        <option value="&gt;">greater than</option>
+                        <option value="&gt;=">at least</option>
+                        <option value="&lt;">less than</option>
+                        <option value="&lt;=">at most</option>
+                      </optgroup>
+                    </select>
+                    <!-- Aggregate comparison (SC-2701 Option 2): measure <select> + numeric value. Replaces
+                         the member control when the operator is a comparison (conditionWantsMember → false). -->
+                    <ng-container *ngIf="conditionIsComparison('base', i)">
+                      <select class="condition-measure-select"
+                              [class.condition-member-select--empty]="conditionIsIncomplete('base', i)"
+                              [ngModel]="conditionComparisonMeasure('base', i)"
+                              (ngModelChange)="setComparisonMeasure('base', i, $event)">
+                        <option value="" disabled hidden>Select a measure…</option>
+                        <option *ngFor="let m of comparisonMeasureOptions()" [value]="m">{{ m }}</option>
+                      </select>
+                      <input class="condition-value-input" type="number" inputmode="decimal"
+                             [class.condition-member-select--empty]="conditionIsIncomplete('base', i)"
+                             [value]="conditionComparisonValue('base', i) ?? ''"
+                             (change)="setComparisonValue('base', i, $any($event.target).value)"
+                             placeholder="value" />
+                    </ng-container>
+                    <input class="condition-member-combobox" *ngIf="conditionWantsMember('base', i) && !conditionIsSetOperator('base', i)"
+                           [class.condition-member-select--empty]="conditionIsIncomplete('base', i)"
+                           [attr.list]="conditionMemberListId('base', i)"
+                           [value]="conditionMemberKey('base', i)"
+                           (change)="selectConditionMember('base', i, $any($event.target).value)"
+                           placeholder="Select or type a value" />
+                    <datalist [attr.id]="conditionMemberListId('base', i)">
+                      <option *ngFor="let m of conditionMemberOptions('base', i)" [value]="m.key ?? m.name">{{ conditionMemberLabel(m) }}</option>
+                    </datalist>
+                    <details class="condition-member-checkboxes" *ngIf="conditionIsSetOperator('base', i)" axCloseOnOutside
+                             [class.condition-member-select--empty]="conditionIsIncomplete('base', i)">
+                      <summary [attr.aria-label]="'Choose members'">{{ conditionSetSummary('base', i) }}</summary>
+                      <ul class="condition-member-checklist" role="group">
+                        <li *ngFor="let m of conditionSetChoices('base', i); trackBy: trackConditionMember">
+                          <label>
+                            <input type="checkbox"
+                                   [checked]="conditionMemberKeys('base', i).includes(m.key ?? m.name)"
+                                   (change)="toggleConditionMember('base', i, (m.key ?? m.name), $any($event.target).checked)" />
+                            {{ conditionMemberLabel(m) }}
+                          </label>
+                        </li>
+                        <li class="condition-member-add">
+                          <input class="condition-member-add-input" #baseAddInput type="text"
+                                 placeholder="Add a value…"
+                                 (keydown.enter)="addTypedSetMember('base', i, baseAddInput.value); baseAddInput.value = ''" />
+                        </li>
+                      </ul>
+                    </details>
+                    </ng-container>
+                  </span>
+                  <input class="form-input condition-input" *ngIf="conditionIsFreeText('base', i)"
+                         [ngModel]="form.baseConditions[i]"
+                         (ngModelChange)="onFreeTextInput('base', i, $event)"
+                         placeholder="e.g. [actualTimeOfArrival].[H1].[value].&[&lt;null&gt;]" />
+                </div>
+                <!-- Quiet, always-present ⚠ per active warning channel: the permanent resting form of the
+                     advisory. Hover/focus shows the full text via the global [data-tooltip]; the loud text
+                     itself appears only as a transient toast when a direct edit triggers it (toastNewWarnings).
+                     Keyboard-reachable (tabindex 0) + aria-exposed. Advisory only — never blocks submit. -->
+                <span class="condition-warning-icon" *ngIf="warningActive('base', i, 'diag')"
+                      tabindex="0" role="img" aria-hidden="false"
+                      [attr.data-tooltip]="warningMessage('base', i, 'diag')"
+                      [attr.aria-label]="warningMessage('base', i, 'diag')">⚠</span>
+                <span class="condition-warning-icon" *ngIf="warningActive('base', i, 'v180')"
+                      tabindex="0" role="img" aria-hidden="false"
+                      [attr.data-tooltip]="warningMessage('base', i, 'v180')"
+                      [attr.aria-label]="warningMessage('base', i, 'v180')">⚠</span>
+                <button class="condition-mdx-toggle" type="button" *ngIf="!conditionFreeTextForced('base', i)"
+                        (click)="toggleFreeText('base', i)"
+                        [attr.aria-pressed]="conditionIsFreeText('base', i)"
+                        [attr.data-tooltip]="conditionIsFreeText('base', i) ? 'Use guided' : 'Edit as raw text'"
+                        [attr.aria-label]="conditionIsFreeText('base', i) ? 'Switch to guided editing' : 'Edit as raw text'">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                </button>
+                <button class="form-remove-row-btn" (click)="removeBaseCondition(i)"
+                        aria-label="Remove condition">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+                </div>
+                <!-- Keyboard combine affordance (SC-2666): when the analyzer flags row `i` in a positive
+                     same-level pair, offer a one-click merge into "is one of". Advisory text itself is the
+                     quiet ⚠ icon (hover) + a toast on edit; this button is the ACTION, not the message. -->
+                <button type="button" class="condition-warning-action"
+                        *ngIf="conditionCombineTarget('base', i) as t"
+                        [hidden]="isMergeOffer('base', t.dropIndex)"
+                        (click)="mergeConditionRows('base', t.keepIndex, t.dropIndex)">Combine into "is one of"</button>
+                <div class="condition-merge-offer" *ngIf="isMergeOffer('base', i)" role="group">
+                  <span>Combine with "{{ mergeOfferOtherLabel() }}"?</span>
+                  <button type="button" (click)="acceptMergeOffer()">Merge → {{ mergeOfferVerb() }}</button>
+                  <button type="button" (click)="dismissMergeOffer()">Keep separate</button>
+                </div>
+              </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- KPI (numerator) conditions -->
+          <div class="form-section" data-testid="kpi-conditions-section">
+            <div class="form-section-title">
+              KPI Conditions
+              <span class="section-hint">MDX filters — the records this KPI counts</span>
+              <button class="form-add-row-btn" (click)="addKpiCondition()">+ Add</button>
+            </div>
+            <!-- One-line OR-vs-AND teaching hint — appears the first time a second row exists. -->
+            <p class="condition-and-hint" *ngIf="conditionShowAndHint('kpi')">
+              All conditions must be true (AND). To match any of several values in one field, use “is one of”.
+            </p>
+            <div class="condition-rows"
+                 (dragover)="onConditionDragOver('kpi', null, $event)"
+                 (drop)="onConditionDrop('kpi', null, $event)">
+              <ng-container *ngFor="let c of form.kpiConditions; let i = index; trackBy: trackByIndex">
+              <!-- Quiet AND joiner between adjacent rows (Gestalt proximity); never above the first. -->
+              <div class="condition-and-joiner" *ngIf="i > 0" aria-hidden="true">AND</div>
+              <div class="condition-row"
+                   [class.condition-row--target]="(focusedCondition()?.list === 'kpi' && focusedCondition()?.i === i)
+                                                 || (dragOverCondition()?.list === 'kpi' && dragOverCondition()?.i === i)"
+                   (dragover)="onConditionDragOver('kpi', i, $event)"
+                   (dragleave)="onConditionDragLeave('kpi', i)"
+                   (drop)="onConditionDrop('kpi', i, $event)">
+                <!-- Controls line: the chip anchor + the two icon-buttons on ONE horizontal flex row. The
+                     ⚠ warning is a SIBLING below this line (not inside it), so a wrapping advisory can never
+                     compete for width with the member text / overlap the chip. -->
+                <div class="condition-controls">
+                <span class="condition-drag-handle" draggable="true" aria-hidden="true"
+                      (dragstart)="onRowDragStart('kpi', i, $event)" (dragend)="onRowDragEnd()"
+                      title="Drag to reorder">⋮⋮</span>
+                <!-- ALWAYS-present anchor: carries [axGuide] (assistant cue), (focusin) → focus target, the
+                     --target tint, and the raw-MDX-on-hover tooltip in guided mode. Its inner content
+                     switches between the three row states; the anchor element never unmounts, so the
+                     GuideHighlightDirective instance is stable (readiness-emitter mount trap). -->
+                <div class="condition-face" tabindex="0" [axGuide]="'kpiConditions.' + i"
+                     [attr.data-tooltip]="conditionIsFreeText('kpi', i) || conditionIsEmpty('kpi', i) ? null : form.kpiConditions[i]"
+                     (focusin)="focusedCondition.set({ list: 'kpi', i })">
+                  <!-- (b) guided → subject-first chip: level caption · is▾ operator · member combobox. -->
+                  <span class="condition-chip" *ngIf="!conditionIsFreeText('kpi', i)">
+                    <select class="condition-level-select"
+                            [attr.title]="conditionIsRollup('kpi', i) ? 'Counts all members rolled up under this level' : null"
+                            [ngModel]="conditionLevelSpec('kpi', i)"
+                            (ngModelChange)="setConditionLevel('kpi', i, $event)">
+                      <option value="" disabled hidden>Choose a field…</option>
+                      <optgroup *ngFor="let g of conditionLevelGroups()" [label]="g.dimension">
+                        <option *ngFor="let l of g.levels" [value]="l.spec">{{ l.label }}</option>
+                      </optgroup>
+                    </select>
+                    <ng-container *ngIf="conditionHasLevel('kpi', i)">
+                    <!-- 1.8.0 gate: only "is" / "is null" compile to MDX the shipping 1.7.3 engine runs.
+                         The rest are hidden behind advancedMdxEnabled() (mdx-feature-flags, default off). -->
+                    <select class="condition-operator" [ngModel]="conditionOperator('kpi', i)"
+                            (ngModelChange)="setConditionOperator('kpi', i, $event)">
+                      <option value="is">is</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isOneOf">is one of</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isNot">is not</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isNotOneOf">is not one of</option>
+                      <option value="isNull">is null</option>
+                      <option *ngIf="advancedMdxEnabled()" value="isNotNull">is not null</option>
+                      <optgroup *ngIf="advancedMdxEnabled()" label="Aggregate comparison" [disabled]="!comparisonMeasuresAvailable()">
+                        <option value="&gt;">greater than</option>
+                        <option value="&gt;=">at least</option>
+                        <option value="&lt;">less than</option>
+                        <option value="&lt;=">at most</option>
+                      </optgroup>
+                    </select>
+                    <!-- Aggregate comparison (SC-2701 Option 2): measure <select> + numeric value. Replaces
+                         the member control when the operator is a comparison (conditionWantsMember → false). -->
+                    <ng-container *ngIf="conditionIsComparison('kpi', i)">
+                      <select class="condition-measure-select"
+                              [class.condition-member-select--empty]="conditionIsIncomplete('kpi', i)"
+                              [ngModel]="conditionComparisonMeasure('kpi', i)"
+                              (ngModelChange)="setComparisonMeasure('kpi', i, $event)">
+                        <option value="" disabled hidden>Select a measure…</option>
+                        <option *ngFor="let m of comparisonMeasureOptions()" [value]="m">{{ m }}</option>
+                      </select>
+                      <input class="condition-value-input" type="number" inputmode="decimal"
+                             [class.condition-member-select--empty]="conditionIsIncomplete('kpi', i)"
+                             [value]="conditionComparisonValue('kpi', i) ?? ''"
+                             (change)="setComparisonValue('kpi', i, $any($event.target).value)"
+                             placeholder="value" />
+                    </ng-container>
+                    <!-- single-member operators (is / isNot): a native combobox — pick from the level's members
+                         OR type an arbitrary value. Commits on `change` (blur / Enter / pick), not per keystroke.
+                         The typed/picked value flows through selectConditionMember → applyConditionOperator →
+                         composeCondition — the ONE path, so is→null→is no longer strands the row and a value the
+                         live member list lacks is still enterable. -->
+                    <input class="condition-member-combobox" *ngIf="conditionWantsMember('kpi', i) && !conditionIsSetOperator('kpi', i)"
+                           [class.condition-member-select--empty]="conditionIsIncomplete('kpi', i)"
+                           [attr.list]="conditionMemberListId('kpi', i)"
+                           [value]="conditionMemberKey('kpi', i)"
+                           (change)="selectConditionMember('kpi', i, $any($event.target).value)"
+                           placeholder="Select or type a value" />
+                    <datalist [attr.id]="conditionMemberListId('kpi', i)">
+                      <option *ngFor="let m of conditionMemberOptions('kpi', i)" [value]="m.key ?? m.name">{{ conditionMemberLabel(m) }}</option>
+                    </datalist>
+                    <!-- set operators (isOneOf / isNotOneOf): the checkbox multi-select popup (fixed row height;
+                         closed control shows the summary). A type-to-add row lets the user enter a value the
+                         live member list lacks — Enter adds it via the SAME toggleConditionMember path a tick uses. -->
+                    <details class="condition-member-checkboxes" *ngIf="conditionIsSetOperator('kpi', i)" axCloseOnOutside
+                             [class.condition-member-select--empty]="conditionIsIncomplete('kpi', i)">
+                      <summary [attr.aria-label]="'Choose members'">{{ conditionSetSummary('kpi', i) }}</summary>
+                      <ul class="condition-member-checklist" role="group">
+                        <li *ngFor="let m of conditionSetChoices('kpi', i); trackBy: trackConditionMember">
+                          <label>
+                            <input type="checkbox" [checked]="conditionMemberKeys('kpi', i).includes(m.key ?? m.name)"
+                                   (change)="toggleConditionMember('kpi', i, (m.key ?? m.name), $any($event.target).checked)" />
+                            {{ conditionMemberLabel(m) }}
+                          </label>
+                        </li>
+                        <li class="condition-member-add">
+                          <input class="condition-member-add-input" #kpiAddInput type="text"
+                                 placeholder="Add a value…"
+                                 (keydown.enter)="addTypedSetMember('kpi', i, kpiAddInput.value); kpiAddInput.value = ''" />
+                        </li>
+                      </ul>
+                    </details>
+                    </ng-container>
+                  </span>
+                  <!-- (c) free-text → the editable raw-MDX escape hatch (the Wood-L7 safety net). -->
+                  <input class="form-input condition-input" *ngIf="conditionIsFreeText('kpi', i)"
+                         [ngModel]="form.kpiConditions[i]"
+                         (ngModelChange)="onFreeTextInput('kpi', i, $event)"
+                         placeholder="e.g. [status].[H1].[status].&[Active]" />
+                </div>
+                <!-- Always-present quiet ⚠ by the field whenever a warning is active. Hover/focus shows the
+                     full text via the global [data-tooltip] tooltip (fires on :hover AND :focus-visible, so
+                     keyboard users get it too). The LOUD full text appears only as a transient toast, fired
+                     at the edit choke points when a direct edit newly triggers the warning — no stored state,
+                     so a reload shows only the icon, never a toast. -->
+                <span class="condition-warning-icon" *ngIf="warningActive('kpi', i, 'diag')"
+                      tabindex="0" role="img" aria-hidden="false"
+                      [attr.data-tooltip]="warningMessage('kpi', i, 'diag')"
+                      [attr.aria-label]="warningMessage('kpi', i, 'diag')">⚠</span>
+                <span class="condition-warning-icon" *ngIf="warningActive('kpi', i, 'v180')"
+                      tabindex="0" role="img" aria-hidden="false"
+                      [attr.data-tooltip]="warningMessage('kpi', i, 'v180')"
+                      [attr.aria-label]="warningMessage('kpi', i, 'v180')">⚠</span>
+                <!-- Muted pencil icon-button (the page's own Edit glyph, reused from the detail header — the
+                     header's EDIT affordance, not its </> view-source one): guided → "Edit as raw text";
+                     free-text → pressed "Use guided". Capability (the raw-text hatch) unchanged; only the
+                     affordance + labelling. aria-label tracks state (a11y fix). -->
+                <button class="condition-mdx-toggle" type="button" *ngIf="!conditionFreeTextForced('kpi', i)"
+                        (click)="toggleFreeText('kpi', i)"
+                        [attr.aria-pressed]="conditionIsFreeText('kpi', i)"
+                        [attr.data-tooltip]="conditionIsFreeText('kpi', i) ? 'Use guided' : 'Edit as raw text'"
+                        [attr.aria-label]="conditionIsFreeText('kpi', i) ? 'Switch to guided editing' : 'Edit as raw text'">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                </button>
+                <button class="form-remove-row-btn" (click)="removeKpiCondition(i)"
+                        aria-label="Remove condition">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+                </div>
+                <!-- Standalone keyboard Combine affordance (SC-2666): once hosted inside the diag warning
+                     span, now a sibling on its own line below the controls so it survives the warning going
+                     quiet. Offered whenever this row can merge into an adjacent "is one of"; hidden while the
+                     merge offer for the target is already showing. -->
+                <button type="button" class="condition-warning-action"
+                        *ngIf="conditionCombineTarget('kpi', i) as t"
+                        [hidden]="isMergeOffer('kpi', t.dropIndex)"
+                        (click)="mergeConditionRows('kpi', t.keepIndex, t.dropIndex)">Combine into "is one of"</button>
+                <div class="condition-merge-offer" *ngIf="isMergeOffer('kpi', i)" role="group">
+                  <span>Combine with "{{ mergeOfferOtherLabel() }}"?</span>
+                  <button type="button" (click)="acceptMergeOffer()">Merge → {{ mergeOfferVerb() }}</button>
+                  <button type="button" (click)="dismissMergeOffer()">Keep separate</button>
+                </div>
+              </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thresholds & Issues -->
+      <div class="form-section">
+        <div class="form-section-title">Thresholds &amp; Issues</div>
+        <div class="form-grid">
+          <label class="form-label">Watching (yellow)</label>
+          <input class="form-input" type="number" [axGuide]="'watchingThreshold'" [(ngModel)]="form.watchingThreshold" placeholder="e.g. 5" />
+
+          <label class="form-label">Warning (red)</label>
+          <input class="form-input" type="number" [axGuide]="'warningThreshold'" [(ngModel)]="form.warningThreshold" placeholder="e.g. 10" />
+
+          <label class="form-label">Raise Issues</label>
+          <label class="checkbox-label" [axGuide]="'issueKpi'">
+            <input type="checkbox" [(ngModel)]="form.issueKpi" />
+            <span>Raise an issue for each impacted record</span>
+          </label>
+
+          <ng-container *ngIf="form.issueKpi">
+            <label class="form-label">Default Severity</label>
+            <select class="form-input form-select" [axGuide]="'defaultIssueSeverity'" [(ngModel)]="form.defaultIssueSeverity">
+              <option [ngValue]="null">— select severity —</option>
+              <option [ngValue]="1">1 — Most critical</option>
+              <option [ngValue]="2">2 — High</option>
+              <option [ngValue]="3">3 — Medium</option>
+              <option [ngValue]="4">4 — Low</option>
+              <option [ngValue]="5">5 — Least critical</option>
+            </select>
+
+            <label class="form-label">Analysis Service</label>
+            <input class="form-input" [axGuide]="'analysisService'" [(ngModel)]="form.analysisService" placeholder="BPL service for issue resolution (optional)" />
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Dimensions -->
+      <div class="form-section">
+        <div class="form-section-title">
+          Dimensions
+          <span class="section-hint">Break-out axes for drilldown &amp; value breakdown</span>
+          <button class="form-add-row-btn" (click)="addDimension()">+ Add</button>
+        </div>
+        <div class="dim-rows">
+          <div class="dim-row-header">
+            <span>Name</span><span>Label</span><span>Cube Dimension</span><span></span>
+          </div>
+          <div class="dim-row" *ngFor="let d of form.dimensions; let i = index; trackBy: trackByIndex">
+            <input class="form-input" [axGuide]="'dimensions.' + i + '.name'" [(ngModel)]="form.dimensions[i].name" placeholder="e.g. carrier" />
+            <input class="form-input" [axGuide]="'dimensions.' + i + '.label'" [(ngModel)]="form.dimensions[i].label" placeholder="e.g. Carrier" />
+            <select class="form-input form-select" [axGuide]="'dimensions.' + i + '.cubeDimension'" [(ngModel)]="form.dimensions[i].cubeDimension" [disabled]="!form.cube" (ngModelChange)="onFormDimensionChange(i)">
+              <option value="">{{ form.cube ? '— select dimension —' : '— select cube first —' }}</option>
+              <option *ngFor="let dim of formCubeDimensions" [value]="dim.value">{{ dim.value }}</option>
+            </select>
+            <button class="form-remove-row-btn" (click)="removeDimension(i)" aria-label="Remove dimension">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions: Save draft (local only) | Submit (IRIS) | Cancel -->
+      <div class="form-actions">
+        <button class="form-btn form-btn--outline" [axGuide]="'save-draft-button'" (click)="saveDraft()" [disabled]="submitting || savingDraft"
+                data-tooltip-align="start" data-tooltip="Save your work locally without writing to SCO">
+          <span class="btn-spinner" *ngIf="savingDraft" aria-hidden="true"></span>
+          {{ savingDraft ? 'Saving…' : 'Save' }}
+        </button>
+        <button class="form-btn form-btn--outline" [axGuide]="'submit-button'" (click)="submit()" [disabled]="submitting || savingDraft"
+                data-tooltip="Create/update the KPI in SCO">
+          <span class="btn-spinner" *ngIf="submitting" aria-hidden="true"></span>
+          {{ submitting ? 'Submitting…' : 'Submit' }}
+        </button>
+        <button class="form-btn form-cancel-btn" [axGuide]="'cancel-button'" (click)="cancelForm()" [disabled]="submitting || savingDraft"
+                data-tooltip="Discard changes and return to the KPI detail">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Detail view -->
+    <div class="kpi-detail-content" *ngIf="selectedKpi && !formMode">
+
+      <!-- ── Header ─────────────────────────────────────────── -->
+      <div class="detail-header">
+        <div class="detail-header-left">
+          <div class="detail-name-row">
+            <h2 class="detail-name">{{ displayName(selectedKpi) }}</h2>
+          </div>
+          <p class="detail-error" *ngIf="deleteError">{{ deleteError }}</p>
+          <p class="detail-desc" *ngIf="selectedKpi.description">{{ selectedKpi.description }}</p>
+        </div>
+        <div class="detail-actions">
+          <button class="icon-btn" [axGuide]="'edit-kpi'" (click)="openEditForm()" data-tooltip-pos="below" data-tooltip="Edit KPI" aria-label="Edit KPI">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </button>
+          <!-- Submit without opening the form: runs the same validated submit the form's
+               button runs. Always offered — a draft is created in SCO, and one already
+               there is re-submitted as an update. A "send" paper plane, as on a share
+               action. -->
+          <button class="icon-btn" [axGuide]="'submit-button'" (click)="submitSelected()" [disabled]="submitting"
+                  data-tooltip-pos="below" [attr.data-tooltip]="submitSelectedHint" aria-label="Submit KPI">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+          <button class="icon-btn" (click)="openJsonModal()" data-tooltip-pos="below" data-tooltip="View JSON definition" aria-label="View JSON">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </button>
+          <button class="icon-btn icon-btn--danger" (click)="deleteKpi()" [disabled]="deleting" data-tooltip-pos="below" data-tooltip-align="end" [attr.data-tooltip]="isDraftOnly ? 'Discard draft' : 'Delete KPI'" [attr.aria-label]="isDraftOnly ? 'Discard draft' : 'Delete KPI'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Draft-only note: no live data in SCO yet -->
+      <div class="draft-note" *ngIf="isDraftOnly">
+        This KPI is a local draft and hasn’t been submitted to SCO yet, so there’s no live value, breakdown, or records.
+        Click <strong>Edit</strong> then <strong>Submit</strong> to create it.
+      </div>
+
+      <!-- ── Definition (always shown) ──────────────────────── -->
+      <div class="detail-card detail-card--full">
+        <div class="card-title">Definition</div>
+        <div class="def-grid def-grid--wide" *ngIf="selectedKpi.deepseeKpiSpec as spec">
+          <span class="def-label">Cube</span>          <span class="def-val">{{ spec.cube || '—' }}</span>
+          <span class="def-label">Measure</span>       <span class="def-val">{{ spec.kpiMeasure || '—' }}</span>
+          <span class="def-label">Value Type</span>    <span class="def-val">{{ spec.valueType || '—' }}</span>
+          <span class="def-label">Base Object</span>   <span class="def-val">{{ selectedKpi.baseObject || '—' }}</span>
+          <ng-container *ngIf="selectedKpi.issueKpi">
+            <span class="def-label">Issue Severity</span> <span class="def-val">{{ severityLabel(selectedKpi.defaultIssueSeverity) }}</span>
+            <span class="def-label">Analysis Svc</span>   <span class="def-val">{{ selectedKpi.analysisService || '—' }}</span>
+          </ng-container>
+        </div>
+        <div class="def-empty" *ngIf="!selectedKpi.deepseeKpiSpec">No specification available</div>
+      </div>
+
+      <!-- ── Live value | Issues | Breakdown (only for created KPIs) ──────── -->
+      <div class="detail-top-row" *ngIf="!isDraftOnly">
+        <div class="detail-card detail-card--value">
+          <div class="live-title-row">
+            <span class="card-title">Live Value</span>
+            <span class="conn-badge" [class]="'conn-badge--' + connState" [attr.title]="connLabel" role="img"
+                  [attr.aria-label]="'Connection: ' + connLabel">
+              <span class="conn-dot" aria-hidden="true"></span>
+              <span class="conn-label db-visually-hidden" data-testid="conn-label">{{ connLabel }}</span>
+            </span>
+          </div>
+          <div class="value-loading" *ngIf="healthLoading">Loading…</div>
+          <div class="value-error"   *ngIf="healthError && !healthLoading" [attr.title]="healthError">
+            Unavailable
+            <button type="button" class="retry-btn" (click)="fetchHealth(selectedKpi.name)">Retry</button>
+          </div>
+          <div class="value-total" *ngIf="!healthLoading && !healthError">
+            <span class="value-primary" data-testid="live-value" *ngIf="kpiHealth?.value != null">{{ kpiHealth!.value | number }}</span>
+            <span class="value-empty" *ngIf="kpiHealth?.value == null">value unavailable</span>
+          </div>
+        </div>
+
+        <!-- Threshold: a labelled band ruler with the live value marked on it -->
+        <div class="detail-card detail-card--threshold">
+          <div class="value-loading" *ngIf="healthLoading">Loading…</div>
+          <div class="value-error"   *ngIf="healthError && !healthLoading">Unavailable</div>
+          <ng-container *ngIf="!healthLoading && !healthError">
+            <!-- No "Target N" here: the envelope's `target` IS the watching threshold
+                 (backend deriveBands), so it always repeats one of the ruler's ticks. -->
+            <div class="threshold-head">
+              <span class="card-title">Threshold</span>
+              <span class="threshold-status" *ngIf="kpiHealth?.threshold as t" data-testid="threshold-status"
+                    [style.color]="t.statusColor || 'inherit'">{{ thresholdStatusLabel(t.status) }}</span>
+            </div>
+            <div class="value-empty" *ngIf="!kpiHealth?.threshold" data-testid="threshold-note">No threshold set</div>
+            <ng-container *ngIf="kpiHealth?.threshold as t">
+              <div class="threshold-ruler" *ngIf="thresholdRuler as r" data-testid="threshold-ruler" role="img"
+                   [attr.aria-label]="'Threshold status: ' + thresholdStatusLabel(t.status) + ', target ' + t.target">
+                <div class="threshold-marker" *ngIf="r.markerPct !== null" data-testid="threshold-marker"
+                     [style.left.%]="r.markerPct" [style.border-top-color]="t.statusColor || '#1d1d1f'"></div>
+                <div class="threshold-strip">
+                  <span class="threshold-zone" *ngFor="let z of r.zones"
+                        [style.width.%]="z.pct" [style.background-color]="z.color"></span>
+                </div>
+                <div class="threshold-ticks">
+                  <span class="threshold-tick threshold-tick--start" *ngIf="r.start !== null"
+                        data-testid="threshold-tick-start">{{ r.start | number }}</span>
+                  <span class="threshold-tick" *ngFor="let k of r.ticks" [style.left.%]="k.pct">{{ k.value | number }}</span>
+                </div>
+              </div>
+            </ng-container>
+          </ng-container>
+        </div>
+
+        <!-- Issue breakdown by severity, from the same health envelope as the live value -->
+        <div class="detail-card detail-card--issues">
+          <div class="issues-title-row">
+            <span class="card-title">Issue Breakdown</span>
+            <!-- The app's [data-tooltip] bubble, not `title`: the native one is unreliable here
+                 (see styles.css). `below` because an upward bubble is clipped by this card's
+                 overflow:hidden. tabindex so it reaches keyboard users too. -->
+            <span class="stale-badge" *ngIf="issueBreakdown.stale" data-testid="issues-stale" role="img"
+                  data-tooltip="Issue data can take a minute to populate" data-tooltip-pos="below"
+                  tabindex="0"
+                  aria-label="Issue data can take a minute to populate">⚠</span>
+          </div>
+          <div class="value-loading" *ngIf="healthLoading">Loading…</div>
+          <div class="value-error"   *ngIf="healthError && !healthLoading">Unavailable</div>
+          <ng-container *ngIf="!healthLoading && !healthError">
+            <div class="value-empty" *ngIf="issueBreakdown.state !== 'some'" data-testid="issues-note">{{ issueBreakdown.note }}</div>
+            <div class="issue-list" *ngIf="issueBreakdown.state === 'some'">
+              <div class="issue-total" data-testid="issues-total">
+                {{ issueBreakdown.total | number }} {{ issueBreakdown.total === 1 ? 'issue' : 'issues' }}
+              </div>
+              <div class="issue-row" *ngFor="let r of issueBreakdown.rows" data-testid="issue-row">
+                <span class="issue-label">Severity {{ r.severity }}</span>
+                <div class="breakdown-bar-wrap">
+                  <div class="breakdown-bar" [class]="'breakdown-bar--' + r.tone" [style.width.%]="(r.count / issueBreakdown.max) * 100"></div>
+                </div>
+                <span class="breakdown-val">{{ r.count | number }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="detail-card detail-card--breakdown">
+          <div class="breakdown-header">
+            <span class="card-title">Value breakdown by</span>
+            <select class="dim-select" [(ngModel)]="selectedDimension" (ngModelChange)="onDimensionChange()">
+              <option value="">— select dimension —</option>
+              <option *ngFor="let d of selectedKpi.deepseeKpiSpec?.kpiDimensions" [value]="d.name">{{ d.label }}</option>
+            </select>
+            <span class="breakdown-more" *ngIf="breakdown.length > breakdownTop.length" data-testid="breakdown-more"
+                  [title]="breakdown.length + ' members with a value; showing the top ' + breakdownTop.length">
+              +{{ breakdown.length - breakdownTop.length }} more
+            </span>
+          </div>
+          <div class="breakdown-loading" *ngIf="breakdownLoading">Loading…</div>
+          <div class="breakdown-error"   *ngIf="breakdownError && !breakdownLoading">{{ breakdownError }}</div>
+          <div class="breakdown-empty"   *ngIf="!breakdownLoading && !breakdownError && !selectedDimension">Select a dimension above</div>
+          <div class="breakdown-empty"   *ngIf="!breakdownLoading && !breakdownError && selectedDimension && breakdown.length === 0">No data</div>
+          <div class="breakdown-list" *ngIf="!breakdownLoading && breakdownTop.length > 0">
+            <div class="breakdown-row" *ngFor="let v of breakdownTop">
+              <span class="breakdown-label">{{ v.label }}</span>
+              <div class="breakdown-bar-wrap">
+                <div class="breakdown-bar" [style.width.%]="(v.value / breakdownMax) * 100"></div>
+              </div>
+              <span class="breakdown-val">{{ v.value | number }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── KPI conditions ─────────────────────────────────── -->
+      <div class="detail-card detail-card--full" *ngIf="selectedKpi.deepseeKpiSpec?.kpiConditions?.length">
+        <div class="card-title">KPI Conditions <span class="listing-count">(numerator)</span></div>
+        <ul class="condition-list">
+          <li *ngFor="let c of selectedKpi.deepseeKpiSpec!.kpiConditions" class="condition-item">
+            <span class="condition-icon">▸</span>
+            <span class="condition-raw">{{ c }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- ── Base conditions (percentage only) ──────────────── -->
+      <div class="detail-card detail-card--full" *ngIf="selectedKpi.deepseeKpiSpec?.baseConditions?.length">
+        <div class="card-title">Base Conditions <span class="listing-count">(denominator)</span></div>
+        <ul class="condition-list">
+          <li *ngFor="let c of selectedKpi.deepseeKpiSpec!.baseConditions" class="condition-item">
+            <span class="condition-icon">▸</span>
+            <span class="condition-raw">{{ c }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- ── Dimensions ─────────────────────────────────────── -->
+      <div class="detail-card detail-card--full" *ngIf="selectedKpi.deepseeKpiSpec?.kpiDimensions?.length">
+        <div class="card-title">Dimensions</div>
+        <table class="dim-table">
+          <thead><tr><th>Name</th><th>Label</th><th>Cube Dimension</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let d of selectedKpi.deepseeKpiSpec!.kpiDimensions">
+              <td class="dim-name">{{ d.name }}</td>
+              <td>{{ d.label }}</td>
+              <td class="dim-path">{{ d.cubeDimension }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── Listing (only for created KPIs) ────────────────── -->
+      <div class="detail-card detail-card--full detail-card--listing" *ngIf="!isDraftOnly">
+        <div class="listing-header">
+          <span class="card-title">Related Records</span>
+          <div class="listing-col-picker-wrap">
+            <button class="listing-cols-btn" (click)="toggleColumnPicker()" [class.listing-cols-btn--active]="columnPickerOpen">
+              Columns
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="listing-col-picker" *ngIf="columnPickerOpen">
+              <div class="col-picker-empty" *ngIf="columnPickerItems.length === 0">No columns available</div>
+              <ul class="col-picker-list" *ngIf="columnPickerItems.length > 0">
+                <li *ngFor="let item of columnPickerItems; let i = index" class="col-picker-row">
+                  <label class="col-picker-label">
+                    <input type="checkbox" [(ngModel)]="item.selected" />
+                    <span>{{ formatColumnHeader(item.name) }}</span>
+                  </label>
+                  <div class="col-picker-order">
+                    <button class="col-order-btn" (click)="movePickerItem(i, -1)" [disabled]="i === 0" title="Move up">▲</button>
+                    <button class="col-order-btn" (click)="movePickerItem(i, 1)" [disabled]="i === columnPickerItems.length - 1" title="Move down">▼</button>
+                  </div>
+                </li>
+              </ul>
+              <div class="col-picker-actions">
+                <button class="col-picker-apply" (click)="applyColumnPicker()">Apply</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="listing-loading" *ngIf="listingLoading">Loading records…</div>
+        <div class="listing-error"   *ngIf="listingError && !listingLoading">{{ listingError }}</div>
+        <div class="listing-empty"   *ngIf="!listingLoading && !listingError && listingRows.length === 0">No records found</div>
+        <div class="listing-scroll"  *ngIf="!listingLoading && listingRows.length > 0">
+          <table class="listing-table">
+            <thead>
+              <tr>
+                <th *ngFor="let col of listingColumns" (click)="listingSortOn(col)" class="listing-th-sortable">
+                  {{ formatColumnHeader(col) }}
+                  <span class="sort-indicator" *ngIf="listingSortBy === col">{{ listingSortDesc ? '▾' : '▴' }}</span>
+                  <span class="sort-indicator sort-indicator--idle" *ngIf="listingSortBy !== col">⇅</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of listingRows">
+                <td *ngFor="let col of listingColumns">{{ formatCellValue(row[col]) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="listing-pagination" *ngIf="!listingLoading && (listingPage > 1 || listingHasMore)">
+          <button class="page-btn" (click)="listingPageTo(1)" [disabled]="listingPage === 1" title="First page">«</button>
+          <button class="page-btn" (click)="listingPageTo(listingPage - 1)" [disabled]="listingPage === 1" title="Previous page">‹</button>
+          <span class="page-label">Page {{ listingPage }}</span>
+          <button class="page-btn" (click)="listingPageTo(listingPage + 1)" [disabled]="!listingHasMore" title="Next page">›</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ── JSON modal ─────────────────────────────────────────────── -->
+<div class="json-modal-backdrop" *ngIf="jsonModalOpen" (click)="closeJsonModal()">
+  <div class="json-modal" (click)="$event.stopPropagation()">
+    <div class="json-modal-header">
+      <span>JSON Definition — {{ selectedKpi ? displayName(selectedKpi) : '' }}</span>
+      <button class="json-modal-close" (click)="closeJsonModal()">✕</button>
+    </div>
+    <pre class="json-modal-body">{{ rawJson }}</pre>
+  </div>
+</div>
+
+<!-- Confirm: delete / discard KPI -->
+<app-confirm-dialog
+  *ngIf="showDeleteConfirm && selectedKpi"
+  [title]="isDraftOnly ? 'Discard draft' : 'Delete KPI'"
+  [message]="deleteConfirmMessage"
+  [confirmLabel]="isDraftOnly ? 'Discard' : 'Delete'"
+  [danger]="true"
+  (confirmed)="confirmDelete()"
+  (cancelled)="showDeleteConfirm = false">
+</app-confirm-dialog>
+
+<!-- Confirm: delete a group and every KPI under it -->
+<app-confirm-dialog
+  *ngIf="groupPendingDelete"
+  title="Delete group"
+  [message]="deleteGroupMessage"
+  confirmLabel="Delete"
+  [danger]="true"
+  (confirmed)="confirmDeleteGroup()"
+  (cancelled)="cancelDeleteGroup()">
+</app-confirm-dialog>
+
+<!-- Confirm: discard unsaved KPI edits on cancel -->
+<app-confirm-dialog
+  *ngIf="showCancelConfirm"
+  title="Discard changes?"
+  message="You have unsaved changes. Leaving now will discard them."
+  confirmLabel="Discard"
+  cancelLabel="Keep editing"
+  [danger]="true"
+  (confirmed)="performCancel()"
+  (cancelled)="showCancelConfirm = false">
+</app-confirm-dialog>
+
+<!-- Leave prompt: navigating away with unsaved edits (save draft / leave / stay) -->
+<app-confirm-dialog
+  *ngIf="showLeaveConfirm"
+  title="Save changes?"
+  message="You have unsaved changes to this KPI. Save them as a draft before leaving?"
+  confirmLabel="Save"
+  tertiaryLabel="Leave without saving"
+  cancelLabel="Keep editing"
+  (confirmed)="leaveSaveDraft()"
+  (tertiary)="leaveWithoutSaving()"
+  (cancelled)="leaveKeepEditing()">
+</app-confirm-dialog>
+
+<!-- Confirm: smaller destructive form actions (remove condition/dimension) -->
+<app-confirm-dialog
+  *ngIf="confirmPrompt as p"
+  [title]="p.title"
+  [message]="p.message"
+  [confirmLabel]="p.confirmLabel"
+  [danger]="true"
+  (confirmed)="runConfirmPrompt()"
+  (cancelled)="cancelConfirmPrompt()">
+</app-confirm-dialog>

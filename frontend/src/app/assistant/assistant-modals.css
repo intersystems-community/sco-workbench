@@ -1,0 +1,162 @@
+/* Shared styling for the inline confirm & ask cards in the assistant panel.
+   Adapted from the original chat modals; palette aligned to the workbench
+   (accent #0066cc, SF Pro, light theme). */
+
+.ax-modal {
+  background: #ffffff;
+  border: 1px solid #d8dee4;
+  border-radius: 14px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+  animation: ax-modal-in 0.14s ease-out;
+  font-size: 14px;
+}
+@keyframes ax-modal-in {
+  from { transform: translateY(6px) scale(0.99); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.ax-modal__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eceff2;
+  background: #f7f9fb;
+}
+.ax-modal__title { font-weight: 600; font-size: 14px; color: #1d1d1f; }
+.ax-modal__subtitle { font-size: 12px; color: #656d76; }
+.ax-modal__content { padding: 14px 16px 16px; }
+.ax-modal__actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+/* ---- Confirm ---- */
+.ax-confirm__summary { margin: 0 0 12px; color: #1d1d1f; line-height: 1.5; }
+.ax-confirm__tool {
+  margin-bottom: 16px;
+  background: #f5f5f7; border: 1px solid #e3e6ea; border-radius: 10px; overflow: hidden;
+}
+.ax-confirm__toollabel {
+  display: block; padding: 7px 11px; border-bottom: 1px solid #e3e6ea;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px;
+  color: #0066cc; font-weight: 600;
+}
+.ax-confirm__input {
+  margin: 0; padding: 9px 11px; background: none; border: none;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: #1d1d1f;
+  white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow: auto;
+}
+
+/* ---- Buttons ---- */
+.ax-btn {
+  border: 1px solid #d8dee4; background: #f5f5f7; color: #1d1d1f;
+  border-radius: 9px; padding: 8px 16px; font: inherit; font-weight: 600;
+  cursor: pointer; min-width: 96px; text-align: center;
+  transition: background 0.12s, border-color 0.12s, opacity 0.12s;
+}
+.ax-btn:hover { background: #e9ebee; }
+.ax-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ax-btn--primary { background: #0066cc; border-color: #0066cc; color: #fff; }
+.ax-btn--primary:hover { background: #0a5bb5; }
+.ax-btn--ghost { background: #fff; }
+.ax-btn--ghost:hover { background: #f5f5f7; }
+
+/* ---- Ask (tabbed) ---- */
+/* Keep the card compact: cap width + height so it never eats the panel; the
+   options list scrolls internally while the header/tabs/actions stay pinned. */
+.ax-ask {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 420px;
+  /* Rest against the RIGHT edge of the overlay (was left by default) so it lines
+     up with the composer's mode picker / send controls. Draggable from there. */
+  margin-left: auto;
+  max-height: min(52vh, 400px);
+  font-size: 13px;
+}
+.ax-ask__head { flex-direction: row; align-items: center; justify-content: space-between; flex-shrink: 0; padding: 9px 13px; }
+/* The header doubles as a drag handle so the user can move the card aside to
+   read the chat underneath. */
+.ax-ask__head--drag { cursor: grab; user-select: none; }
+.ax-ask__head--dragging { cursor: grabbing; }
+.ax-ask .ax-modal__title { font-size: 13px; }
+/* Header controls: collapse chevron + close, as one group at the right. */
+.ax-ask__head-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.ax-ask__head-count { font-size: 11px; color: #656d76; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.ax-ask__icon-btn,
+.ax-ask__close {
+  width: 22px; height: 22px; padding: 0; display: grid; place-items: center;
+  background: none; border: none; border-radius: 6px; color: #656d76;
+  font-size: 13px; cursor: pointer; transition: background 0.12s, color 0.12s;
+}
+.ax-ask__icon-btn:hover,
+.ax-ask__close:hover { background: #eceff2; color: #1d1d1f; }
+
+/* Collapsed: the card IS its header bar. The head's bottom border would read as a
+   stray rule under a bar with nothing beneath it, so it goes. */
+.ax-ask--collapsed .ax-ask__head { border-bottom: none; }
+
+.ax-ask__tabs {
+  display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 13px 0;
+  border-bottom: 1px solid #eceff2; flex-shrink: 0;
+}
+.ax-tab {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: none; background: none; color: #656d76;
+  padding: 5px 3px; margin-bottom: -1px; border-bottom: 2px solid transparent;
+  font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.ax-tab:hover { color: #1d1d1f; }
+.ax-tab.answered { color: #1a7f37; }
+.ax-tab.active { color: #0066cc; border-bottom-color: #0066cc; }
+.ax-tab__check { color: #1a7f37; font-size: 10px; }
+
+/* Scroll region: only the question + options scroll; header/tabs/actions stay put. */
+.ax-ask__body { padding: 10px 13px 4px; overflow-y: auto; flex: 1; min-height: 0; }
+.ax-ask__question { margin: 0 0 8px; font-size: 13px; font-weight: 600; line-height: 1.35; color: #1d1d1f; }
+
+.ax-options { display: flex; flex-direction: column; gap: 5px; }
+.ax-option {
+  display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left;
+  border: 1px solid #d8dee4; background: #fff; border-radius: 8px; padding: 6px 9px;
+  font: inherit; font-size: 13px; cursor: pointer; transition: background 0.12s, border-color 0.12s;
+}
+.ax-option:hover { background: #f5f5f7; border-color: #b9d4f0; }
+.ax-option.selected { border-color: #0a5bb5; background: #eaf3fc; }
+.ax-option__mark { flex: none; color: #0066cc; font-size: 13px; line-height: 1.45; }
+.ax-option__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ax-option__label { color: #1d1d1f; font-weight: 500; }
+.ax-option__desc { color: #656d76; font-size: 11.5px; line-height: 1.35; }
+
+.ax-other { margin: 8px 0 2px; }
+.ax-other__label {
+  display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
+  color: #656d76; margin-bottom: 4px;
+}
+.ax-other__input {
+  width: 100%; background: #f5f5f7; border: 1px solid #d8dee4; border-radius: 8px;
+  padding: 6px 9px; font: inherit; font-size: 13px; color: #1d1d1f; outline: none;
+}
+.ax-other__input:focus { border-color: #0066cc; }
+.ax-other__input:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+
+.ax-ask__actions { padding: 8px 13px 10px; justify-content: space-between; flex-shrink: 0; border-top: 1px solid #eceff2; }
+.ax-ask__meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ax-ask__hint { font-size: 11px; color: #656d76; }
+.ax-ask__progress { font-size: 11px; color: #656d76; }
+.ax-ask__next {
+  flex: none; width: 30px; height: 30px; padding: 0; display: grid; place-items: center;
+  background: none; border: none; color: #0066cc; cursor: pointer; border-radius: 7px;
+  transition: color 0.12s, background 0.12s, opacity 0.12s;
+}
+.ax-ask__next:hover:not(:disabled) { color: #0a5bb5; background: #f5f5f7; }
+.ax-ask__next:disabled { opacity: 0.35; cursor: not-allowed; }
+.ax-ask__next svg { display: block; width: 18px; height: 18px; }
+.ax-ask__submit {
+  flex: none; padding: 6px 15px; font-weight: 600; font-size: 12.5px;
+  color: #fff; background: #0066cc; border: none; border-radius: 7px; cursor: pointer;
+  transition: background 0.12s, opacity 0.12s;
+}
+.ax-ask__submit:hover:not(:disabled) { background: #0a5bb5; }
+.ax-ask__submit:disabled { opacity: 0.4; cursor: not-allowed; }

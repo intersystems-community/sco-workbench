@@ -1,0 +1,1997 @@
+:host {
+  display: block;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.kpi-page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Left panel ──────────────────────────────────────────────── */
+.kpi-list-panel {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  /* visible (not hidden) so the "+" add menu/popover can extend past the panel's
+     right edge without being clipped; the list itself scrolls via .kpi-groups. */
+  overflow: visible;
+  min-height: 0;
+}
+
+/* Collapse the list panel — a plain icon button (no border/background). */
+.list-collapse-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+.list-collapse-btn:hover { color: #1d1d1f; }
+
+/* Collapsed state takes NO column width: a thin strip pinned to the left edge
+   that reveals a floating expand arrow only when the user hovers it. */
+.list-hover-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 14px;
+  z-index: 5;
+}
+.list-expand-btn {
+  position: absolute;
+  top: 10px;
+  left: 6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.list-expand-btn:hover { color: #1d1d1f; }
+
+/* When the list is collapsed, indent the detail panel so its card clears the
+   floating expand (›) button pinned to the left edge. */
+.kpi-page--list-collapsed .kpi-detail-panel { padding-left: 34px; }
+
+/* Single "+" add control (menu: new KPI / new group). */
+.kpi-add-wrap { margin-left: auto; position: relative; flex-shrink: 0; }
+
+.add-kpi-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid #0066cc;
+  background: transparent;
+  color: #0066cc;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.add-kpi-btn:hover { background: #e8f0fb; }
+.add-kpi-btn svg { width: 12px; height: 12px; }
+
+/* Add menu + group popover: absolutely positioned so they never push the list
+   down (no layout gap). */
+.kpi-add-menu,
+.kpi-add-group-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; /* the menu's left edge aligns with the "+" button; opens rightward */
+  z-index: 20;
+  background: #fff;
+  border: 1px solid #d8dee4;
+  border-radius: 9px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  padding: 4px;
+}
+.kpi-add-menu { min-width: 150px; }
+.kpi-add-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: #1d1d1f;
+  cursor: pointer;
+}
+.kpi-add-menu-item:hover { background: #f5f5f7; }
+.kpi-add-menu-icon { font-size: 13px; width: 16px; text-align: center; }
+
+.kpi-add-group-pop { width: 220px; padding: 10px; }
+.new-group-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+}
+.new-group-input:focus { border-color: #0066cc; }
+.new-group-input:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+.kpi-add-group-actions { display: flex; gap: 6px; margin-top: 8px; }
+.new-group-ok {
+  font-size: 11px; font-weight: 600; color: #fff; background: #0066cc;
+  border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer;
+}
+.new-group-ok:disabled { opacity: 0.45; cursor: default; }
+.new-group-cancel {
+  font-size: 11px; color: #666; background: #f0f0f2; border: none;
+  border-radius: 6px; padding: 5px 12px; cursor: pointer;
+}
+.new-group-cancel:hover { background: #e6e6ea; }
+
+.count {
+  font-weight: 400;
+  color: #888;
+}
+
+.panel-loading,
+.panel-error {
+  padding: 16px;
+  font-size: 13px;
+  color: #888;
+}
+
+.panel-error { color: #cc3300; }
+
+.kpi-groups {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0;
+}
+
+/* ── Group ───────────────────────────────────────────────────── */
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  user-select: none;
+  background: #f5f5f7;
+  border-top: 1px solid #e8e8ed;
+}
+
+/* No divider above the very first group — it sits flush under the panel header
+   (avoids a faint empty strip / double border below the header). */
+.kpi-group:first-child .group-header { border-top: none; }
+
+.group-header:hover { background: #ebebf0; }
+
+/* Active drop target while dragging a KPI over this group header. */
+.group-header--drop {
+  background: #e8f0fb;
+  box-shadow: inset 0 0 0 2px #0066cc;
+}
+
+.group-arrow {
+  font-size: 14px;
+  line-height: 1;
+  color: #888;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.group-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  flex: 1;
+  min-height: 16px; /* keep header height stable when the label is blank */
+}
+
+/* Delete-group button: appears on group-header hover; removes the group + its KPIs. */
+.group-delete-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #a0a0a5;
+  cursor: pointer;
+  border-radius: 5px;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, background 0.12s;
+}
+.group-delete-btn svg { width: 14px; height: 14px; }
+.group-header:hover .group-delete-btn { opacity: 1; }
+.group-delete-btn:hover { color: #c0392b; background: #ffe5e5; }
+
+/* ── KPI items ───────────────────────────────────────────────── */
+.kpi-items {
+  list-style: none;
+  margin: 0;
+  padding: 2px 0;
+}
+
+.kpi-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px 6px 20px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  gap: 6px;
+}
+
+.kpi-item:hover { background: #f5f5f7; }
+
+.kpi-item--active {
+  background: #e8f0fb;
+  border-left-color: var(--db-accent);
+}
+
+/* The row being dragged dims while a drop target is chosen. Also suppress its
+   [data-tooltip] bubble so the drag image is just the row, not the tooltip too. */
+.kpi-item--dragging { opacity: 0.45; }
+.kpi-item--dragging::after,
+.kpi-item--dragging::before { display: none !important; }
+
+/* Drag handle: subtle, only obvious on row hover (the whole row is draggable). */
+.kpi-drag-handle {
+  flex-shrink: 0;
+  font-size: 10px;
+  letter-spacing: -2px;
+  color: #c7c7cc;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.kpi-item:hover .kpi-drag-handle { opacity: 1; }
+
+/* KPI name — matches the cube list item font (12px / 500 / #1d1d1f). */
+.kpi-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1d1d1f;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpi-empty {
+  padding: 6px 20px;
+  font-size: 12px;
+  color: #bbb;
+  font-style: italic;
+}
+
+.kpi-status-dot--issue {
+  font-size: 10px;
+  font-weight: 700;
+  color: #b45e00;
+  background: #fff3e0;
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+/* Draft badge on a list item + the Drafts group label. Match the Cube status
+   tag's style: first-letter capital only (not ALL CAPS), same weight/size. */
+.kpi-tag--draft {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: #b45e00;
+  background: #fff8e1;
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+.group-label--ungrouped { color: #b45e00; }
+
+/* ── Right: detail panel ─────────────────────────────────────── */
+.kpi-detail-panel {
+  flex: 1;
+  overflow-y: auto;
+  background: #f2f2f7;
+  min-height: 0;
+}
+
+/* ── Business KPI intro panel ────────────────────────────────── */
+
+.kpi-intro {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.kpi-intro-title { font-size: 22px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.4px; margin: 0; }
+.kpi-intro-section { display: flex; flex-direction: column; gap: 8px; }
+
+.kpi-intro-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #0066cc;
+}
+
+.kpi-intro-text { font-size: 13px; line-height: 1.7; color: #3a3a3c; margin: 0; }
+.kpi-intro-rule { border: none; border-top: 1px solid #e8e8ed; margin: 0; }
+
+.kpi-intro-beyond {
+  background: #fafafa;
+  border: 1px solid #e8e8ed;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kpi-intro-bullet-list { display: flex; flex-direction: column; gap: 6px; }
+
+.kpi-intro-bullet-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #3a3a3c;
+}
+
+.kpi-intro-bullet-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0066cc;
+  opacity: 0.5;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.kpi-intro-step-list { display: flex; flex-direction: column; gap: 10px; }
+
+.kpi-intro-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e8e8ed;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.kpi-intro-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0066cc;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.kpi-intro-step-body { display: flex; flex-direction: column; gap: 2px; }
+.kpi-intro-step-title { font-size: 13px; font-weight: 600; color: #1d1d1f; }
+.kpi-intro-step-desc { font-size: 12px; line-height: 1.6; color: #666; }
+
+.kpi-intro-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #f5f9ff;
+  border: 1px solid #c8ddf5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #2a4a70;
+  margin-top: 4px;
+}
+
+.kpi-intro-tip svg { width: 14px; height: 14px; flex-shrink: 0; stroke: #0066cc; margin-top: 1px; }
+.kpi-intro-link { color: #0066cc; text-decoration: none; }
+.kpi-intro-link:hover { text-decoration: underline; }
+
+/* ── Detail content layout ───────────────────────────────────── */
+/* Fills the whole space between the list panel and the chat window (no
+   max-width cap) so the detail view flexes as the chat opens/closes — same as
+   the cube detail view. */
+.kpi-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.detail-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.detail-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+/* Icon action buttons on the detail header (top-right): edit · json · delete. */
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid #d8d8dd;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.icon-btn svg { width: 15px; height: 15px; }
+.icon-btn:hover:not(:disabled) { background: #e8f0fb; color: #0066cc; border-color: #0066cc; }
+.icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.icon-btn--danger:hover:not(:disabled) { background: #fdecee; color: #cf222e; border-color: #cf222e; }
+
+.detail-error {
+  color: #cf222e;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.detail-desc {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.detail-header-tags {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.tag--status  { background: #e6f4ea; color: #2e7d32; }
+.tag--object  { background: #e8f0fb; color: #0066cc; }
+.tag--issue   { background: #fff3e0; color: #b45e00; }
+.tag--draft   { background: #fff8e1; color: #b45e00; }
+.tag--created { background: #e6f4ea; color: #2e7d32; }
+
+/* Note shown on the detail view for a draft-only (unsubmitted) KPI. */
+.draft-note {
+  font-size: 12px;
+  color: #7a5b00;
+  background: #fff8e1;
+  border: 1px solid #f0d999;
+  border-radius: 10px;
+  padding: 10px 14px;
+  line-height: 1.5;
+}
+.draft-note strong { color: #5a4400; }
+
+/* ── Top row: Value | Breakdown | Definition ─────────────────── */
+/* Live value | Threshold | Issues | Value breakdown. The live value is a fixed
+   120px square (matching the row height); the other three share the rest, with
+   the breakdown taking the widest slice for its bars. */
+.detail-top-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.7fr);
+  /* 120px is the floor, not the height: a multi-severity issue list grows the row instead of
+     being clipped mid-row (SC-2721). .issue-list's max-height bounds how far it can grow. */
+  grid-template-rows: minmax(120px, auto);
+  gap: 12px;
+}
+
+/* ── Cards ───────────────────────────────────────────────────── */
+.detail-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.detail-card--full {
+  grid-column: 1 / -1;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+
+/* ── Value card ──────────────────────────────────────────────── */
+/* A 120px square — same as the row height. Tighter padding than the other cards so
+   the value still fits, and the connection light shows as a dot only (its label is
+   in the tooltip + aria-label). */
+.detail-card--value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+  width: 120px;
+  height: 120px;
+  padding: 12px 10px;
+  box-sizing: border-box;
+}
+
+.detail-card--value .card-title {
+  margin-bottom: 0;
+  letter-spacing: 0.3px;
+}
+
+/* Title row of the Live Value card: label plus the connection light beside it. */
+.live-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+/* The square has no room for the 34px number plus the timestamp — scale it down. */
+.detail-card--value .value-primary { font-size: 26px; }
+
+/* Loading / failed states centre in the square, with Retry stacked under the text. */
+.detail-card--value .value-loading,
+.detail-card--value .value-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.detail-card--value .retry-btn { margin-left: 0; }
+
+
+.conn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  white-space: nowrap;
+}
+
+.conn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c7c7cc;
+  flex-shrink: 0;
+}
+
+/* Live read succeeded — green light with a slow pulsing ring, so the tile reads as a live
+   feed rather than a static number. `prefers-reduced-motion` keeps the ring, drops the pulse. */
+.conn-badge--live .conn-dot {
+  background: #1faa59;
+  box-shadow: 0 0 0 3px rgba(31, 170, 89, 0.18);
+  animation: conn-pulse 2s ease-in-out infinite;
+}
+.conn-badge--live { color: #1faa59; }
+
+@keyframes conn-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(31, 170, 89, 0.10); }
+  50%      { box-shadow: 0 0 0 5px rgba(31, 170, 89, 0.26); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .conn-badge--live .conn-dot { animation: none; }
+}
+
+.conn-badge--down .conn-dot { background: #cc3300; }
+.conn-badge--down { color: #cc3300; }
+
+.value-total {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.value-primary {
+  font-size: 34px;
+  font-weight: 700;
+  color: #0066cc;
+  line-height: 1.05;
+  /* Keep a large value inside the fixed-width value card: wrap/break instead of
+     overflowing, and shrink the glyphs a little for very long numbers. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: center;
+}
+
+.value-loading,
+.value-error,
+.value-empty {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.value-error { color: #cc3300; }
+
+/* Inline Retry for a failed health fetch (distinct from the envelope's own
+   value/issues "unavailable" markers, which ride inside a successful 200). */
+.retry-btn {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: #0066cc;
+  background: transparent;
+  border: 1px solid #0066cc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.retry-btn:hover { background: #e8f0fb; }
+
+/* ── Threshold card ──────────────────────────────────────────── */
+.detail-card--threshold {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.detail-card--threshold .card-title { margin-bottom: 0; }
+
+/* Title and status share one line, so the ruler owns the rest of the card and can
+   sit centred in it instead of being pinned under the title. */
+.threshold-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Ruler: band strip + a marker at the live value + the band edges as tick labels.
+   Zone widths are proportional (set inline from the derived percentages), so a tick
+   sits exactly on the colour change it names. The top padding reserves room for the
+   marker above the strip; auto margins centre the whole block in the card. */
+.threshold-ruler {
+  position: relative;
+  margin: auto 0;
+  padding-top: 7px;
+}
+
+.threshold-strip {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.threshold-zone { flex: 0 0 auto; }
+
+/* Downward triangle above the strip, in the status colour. Above, not below, so it
+   does not crowd the tick labels. */
+.threshold-marker {
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #1d1d1f;
+}
+
+.threshold-ticks {
+  position: relative;
+  height: 14px;
+  margin-top: 6px;
+}
+
+.threshold-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+
+/* The scale start anchors the left end of the bar; left-aligned so it isn't clipped. */
+.threshold-tick--start {
+  left: 0;
+  transform: none;
+}
+
+.threshold-status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Issue breakdown card ────────────────────────────────────── */
+.detail-card--issues {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Title plus the staleness warning. The title keeps its own bottom margin, so the row needs none. */
+.issues-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+/* Amber matches the 'watching' tone used by the threshold status and the severity-3 bar. */
+.stale-badge {
+  font-size: 11px;
+  line-height: 1;
+  color: #b45e00;
+  /* Not `help`: that cursor is an arrow with a question mark, which reads as the badge itself
+     showing a "?". `default` keeps the plain arrow (bare text would give an I-beam). */
+  cursor: default;
+}
+
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Always reserve the scrollbar so a long list visibly signals "more below" (cf. .attr-scroll).
+     Styling ::-webkit-scrollbar is what opts out of the overlay scrollbar, which reserves no
+     width and stays invisible until dragged; scrollbar-color/-width do not. */
+  overflow-y: scroll;
+  /* Without this the y-scroll makes the x-axis 'auto', and a stray horizontal bar would eat
+     a third of the tile's height. */
+  overflow-x: hidden;
+  /* `auto` basis (not 0) so the list asks for its content height and the row grows to give it.
+     A row costs 22.5px (16.5 + the 6px gap); 137px is the 5 rows severity 1-5 needs, which is
+     the range this card's tones assume. A longer list stops growing the row and scrolls. */
+  flex: 1 1 auto;
+  max-height: 137px;
+  min-height: 0;
+}
+.issue-list::-webkit-scrollbar { width: 10px; }
+.issue-list::-webkit-scrollbar-thumb {
+  background: #c4c4c9;
+  border-radius: 5px;
+  border: 2px solid #ffffff;
+}
+.issue-list::-webkit-scrollbar-thumb:hover { background: #a8a8ad; }
+.issue-list::-webkit-scrollbar-track { background: transparent; }
+
+.issue-total {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin-bottom: 2px;
+}
+
+.issue-row {
+  display: grid;
+  /* The bar is the only flexible column: minmax(0, …) lets it shrink to whatever the scrollbar
+     and the count leave, and `auto` sizes the count to its digits so a five-figure total is not
+     clipped. A bare 1fr plus a fixed count width did both. */
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.issue-label {
+  font-size: 11px;
+  color: #555;
+  white-space: nowrap;
+}
+
+/* Severity tone on the shared breakdown bar: 1–2 critical, 3 medium, 4–5 low. */
+.breakdown-bar--high { background: #cc3300; }
+.breakdown-bar--med  { background: #b45e00; }
+.breakdown-bar--low  { background: #8a8a8e; }
+
+/* ── Breakdown card ──────────────────────────────────────────── */
+.detail-card--breakdown {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.breakdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.breakdown-header .card-title {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.dim-select {
+  font-size: 11px;
+  color: #555;
+  background: #f5f5f7;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 3px 6px;
+  cursor: pointer;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.dim-select:focus { border-color: #0066cc; }
+.dim-select:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+
+/* No scrolling: the tile shows only the top rows that fit (see BREAKDOWN_ROWS). */
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* "+N more" count in the header when the ranked list is truncated. */
+.breakdown-more {
+  margin-left: auto;
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.breakdown-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 56px;
+  align-items: center;
+  gap: 8px;
+}
+
+.breakdown-label {
+  font-size: 11px;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breakdown-bar-wrap {
+  background: #f0f0f0;
+  border-radius: 3px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.breakdown-bar {
+  height: 100%;
+  background: #0066cc;
+  border-radius: 3px;
+  min-width: 2px;
+  transition: width 0.3s ease;
+}
+
+.breakdown-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d1d1f;
+  text-align: right;
+}
+
+.breakdown-loading,
+.breakdown-error,
+.breakdown-empty {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.breakdown-error { color: #cc3300; }
+
+/* ── Definition grid ─────────────────────────────────────────── */
+.def-grid {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 5px 12px;
+  align-items: baseline;
+}
+
+/* Two-column-pair definition grid for the wider detail card. */
+.def-grid--wide {
+  grid-template-columns: 110px 1fr 110px 1fr;
+}
+
+.def-label {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.def-val {
+  font-size: 12px;
+  color: #1d1d1f;
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}
+
+.def-empty {
+  font-size: 13px;
+  color: #aaa;
+}
+
+/* ── Business logic conditions ───────────────────────────────── */
+.condition-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.condition-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.condition-icon {
+  color: #0066cc;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.condition-raw {
+  color: #1d1d1f;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+/* ── Dimensions table ────────────────────────────────────────── */
+.dim-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.dim-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #888;
+  padding: 0 10px 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dim-table td {
+  padding: 5px 10px 5px 0;
+  border-bottom: 1px solid #f9f9f9;
+  color: #1d1d1f;
+  vertical-align: top;
+}
+
+.dim-table tr:last-child td { border-bottom: none; }
+
+.dim-name { font-weight: 500; }
+
+.dim-path {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #666;
+  word-break: break-all;
+}
+
+/* ── JSON modal ──────────────────────────────────────────────── */
+.json-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.json-modal {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 680px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+}
+
+.json-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  flex-shrink: 0;
+}
+
+.json-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #888;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.json-modal-close:hover { background: #f0f0f0; color: #333; }
+
+.json-modal-body {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 16px 20px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #333;
+  background: #f9f9fb;
+  white-space: pre;
+}
+
+/* ── Listing ─────────────────────────────────────────────────── */
+.detail-card--listing {
+  padding-bottom: 0;
+}
+
+.listing-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.listing-header .card-title {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+/* ── Export button ───────────────────────────────────────────── */
+.listing-export-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: #7a7a7a;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.listing-export-btn svg { width: 15px; height: 15px; }
+.listing-export-btn:hover:not(:disabled) { background: #f0f0f0; color: #0066cc; }
+.listing-export-btn:active { transform: scale(0.95); }
+.listing-export-btn:disabled { opacity: 0.45; cursor: default; }
+
+/* ── Column picker ───────────────────────────────────────────── */
+.listing-col-picker-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.listing-cols-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  background: #f5f5f7;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.listing-cols-btn:hover,
+.listing-cols-btn--active {
+  background: #e8f0fb;
+  border-color: var(--db-accent);
+  color: var(--db-accent);
+}
+
+.listing-col-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 260px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.col-picker-loading,
+.col-picker-empty {
+  padding: 16px;
+  font-size: 12px;
+  color: #aaa;
+  text-align: center;
+}
+
+.col-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.col-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  gap: 8px;
+}
+
+.col-picker-row:hover { background: #f9f9fb; }
+
+.col-picker-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #1d1d1f;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.col-picker-label span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-picker-order {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.col-order-btn {
+  font-size: 9px;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 1px 3px;
+  line-height: 1;
+  border-radius: 3px;
+}
+
+.col-order-btn:hover:not(:disabled) { color: #0066cc; background: #e8f0fb; }
+.col-order-btn:disabled { opacity: 0.3; cursor: default; }
+
+.col-picker-actions {
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.col-picker-apply {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0066cc;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 16px;
+  cursor: pointer;
+}
+
+.col-picker-apply:hover { background: #0055aa; }
+
+.listing-count {
+  font-weight: 400;
+  color: #aaa;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+
+.listing-loading,
+.listing-error,
+.listing-empty {
+  font-size: 13px;
+  color: #aaa;
+  padding: 8px 0 14px;
+}
+
+.listing-error { color: #cc3300; }
+
+.listing-scroll {
+  overflow-x: auto;
+  margin: 0 -18px;
+}
+
+.listing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 600px;
+}
+
+.listing-table th {
+  position: sticky;
+  top: 0;
+  background: #f5f5f7;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #888;
+  padding: 6px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  white-space: nowrap;
+}
+
+.listing-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1d1d1f;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listing-table tr:last-child td { border-bottom: none; }
+
+.listing-table tbody tr:hover { background: #f9f9fb; }
+
+.listing-th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.listing-th-sortable:hover { color: #0066cc; }
+
+.sort-indicator {
+  margin-left: 4px;
+  font-size: 10px;
+  color: #0066cc;
+}
+
+.sort-indicator--idle {
+  color: #ccc;
+}
+
+/* ── Pagination ──────────────────────────────────────────────── */
+.listing-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 10px;
+  justify-content: flex-end;
+}
+
+.page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.page-btn:hover:not(:disabled) { background: #e8f0fb; border-color: #0066cc; color: #0066cc; }
+.page-btn:disabled { opacity: 0.35; cursor: default; }
+
+.page-label {
+  font-size: 12px;
+  color: #555;
+  padding: 0 6px;
+}
+
+/* ── Cube modal body ─────────────────────────────────────────── */
+.cube-modal-body {
+  padding: 32px 24px;
+  font-size: 14px;
+  color: #888;
+  text-align: center;
+}
+
+/* ── Create KPI form ─────────────────────────────────────────── */
+.kpi-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.form-error {
+  font-size: 13px;
+  color: #cc3300;
+  background: #fff3f0;
+  border: 1px solid #f5c6c0;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.section-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #aaa;
+  font-size: 11px;
+}
+
+/* Per-page override (not in the global .form-* block): kpi's inline checkbox row
+   (e.g. "Raise Issues") drops the UA checkbox margin. */
+.checkbox-label input[type="checkbox"] { margin: 0; }
+
+/* Per-page override: label column width (global supplies display/gap/align-items). */
+.form-grid { grid-template-columns: 110px 1fr; }
+
+/* ── Condition rows ───────────────────────────────────────────── */
+.condition-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* The row is a vertical stack: the controls line (chip + icon-buttons) on top, the ⚠ advisory on its own
+   line below. Keeping them on separate lines is what stops a wrapping warning from overlapping the chip. */
+.condition-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* The controls line — the horizontal row the chip + pencil toggle + ✕ share (formerly .condition-row itself). */
+.condition-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.condition-drag-handle {
+  cursor: grab;
+  color: var(--db-text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* The always-present per-row anchor (chip redesign, spec §7): holds [axGuide], the focus target, the
+   --target tint, and the raw-MDX-on-hover tooltip. Its inner content switches between the three row
+   states (level-select empty row / guided chip / free-text input) without the anchor ever unmounting. */
+.condition-face {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  outline: none;
+}
+.condition-face:focus-visible {
+  outline: 2px solid var(--db-focus);
+  outline-offset: 2px;
+}
+.condition-input {
+  flex: 1;
+}
+
+/* Guided row → a subject-first chip (level caption · is▾ · member). Chip vocabulary matches the
+   dashboard cube-chart-builder's `.ccb__chip` (radius 12px, --db-* tokens) so the two builders read as
+   one system. The operator select is a bare, in-chip control (no form-input box). */
+.condition-chip {
+  /* Fills the controls line (flex:1) so every row's chip is the SAME width and its parts line up
+     column-to-column across rows — an inline-flex chip sized to content made each row a different width.
+     The level-select empty row and the free-text input (the other two row states) already fill the line,
+     so all three states now present one consistent row width. */
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--db-border);
+  background: var(--db-surface-alt, var(--db-surface));
+  color: var(--db-text);
+  max-width: 100%;
+}
+/* The level select keeps its content width but yields first when the row is tight (it is the least
+   ambiguous of the three parts — the operator and the chosen value carry more meaning). min-width:0 is
+   what lets it shrink: without it the <select> holds its min-content width and the member combobox
+   (the only min-width:0 child) absorbs the entire squeeze and collapses to nothing before the
+   @container wrap fires (Part 1 regression fix). */
+.condition-level-select {
+  font-weight: 600;
+  min-width: 0;
+  max-width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--db-text);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0 2px;
+  cursor: pointer;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.condition-level-select:disabled { cursor: default; }
+.condition-level-select:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+.condition-chip .condition-operator {
+  border: none;
+  background: transparent;
+  color: var(--db-text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0 2px;
+  cursor: pointer;
+  outline: none;
+}
+.condition-chip .condition-operator:disabled { cursor: default; }
+.condition-chip .condition-operator:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+.condition-member { color: var(--db-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* In-chip member combobox — the value is selectable OR typeable in place (not a static caption), so
+   is→null→is can re-pick without a trip back to the tree and a value the live member list lacks is still
+   enterable. Reads as the subject value: same weight as the level, bare like the operator, one shared
+   chip. A native <input list> pairs the datalist picker with free typing.
+   Size to the chosen value and take the row's spare width first: "Consumer electronics" no longer
+   truncates at 16ch when the row has room. It clips (ellipsis) ONLY when the chip would overflow — the
+   chip itself is bounded by max-width:100% of the row. */
+.condition-chip .condition-member-combobox {
+  border: none;
+  background: transparent;
+  color: var(--db-text);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0 2px;
+  flex: 1 1 auto;
+  /* min-width:0 (not a ch floor) so the value can shrink below its content width and ellipsis-clip
+     INSIDE the chip when the column is narrow, instead of overflowing over the row's pencil/trash
+     icons (spec Part 1a). The chip itself must NOT clip — it holds the set-operator popup — so the
+     input clips itself via its existing text-overflow:ellipsis once this floor is gone. */
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  outline: none;
+}
+.condition-chip .condition-member-combobox:disabled { cursor: default; }
+.condition-chip .condition-member-combobox:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+/* No member chosen yet (the [level].&[] sentinel): the "Select…" placeholder reads as a prompt, not a
+   value, and picks up the warn tint so an incomplete row is visibly unfinished. */
+.condition-chip .condition-member-select--empty { color: var(--db-warn); }
+/* Aggregate-comparison controls (SC-2701 Option 2): the measure <select> + numeric value <input> replace
+   the member control on a comparison row. Same bare in-chip look/tokens as .condition-member-combobox so
+   the comparison chip reads identically — no fourth copy of the boxed .form-* vocabulary (National Park).
+   The shared .condition-member-select--empty rule above tints both when the row is under-filled. */
+.condition-chip .condition-measure-select,
+.condition-chip .condition-value-input {
+  border: none;
+  background: transparent;
+  color: var(--db-text);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0 2px;
+  outline: none;
+}
+.condition-chip .condition-measure-select { flex: 1 1 auto; min-width: 0; max-width: 100%; cursor: pointer; overflow: hidden; text-overflow: ellipsis; }
+.condition-chip .condition-value-input { width: 8ch; }
+.condition-chip .condition-measure-select:disabled,
+.condition-chip .condition-value-input:disabled { cursor: default; }
+.condition-chip .condition-measure-select:focus-visible,
+.condition-chip .condition-value-input:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+/* The type-to-add row inside the set popup — a full-width text input under the member checklist. */
+.condition-chip .condition-member-checklist .condition-member-add { padding-top: 4px; }
+.condition-chip .condition-member-add-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+/* Set-operator member control — a <details> popover: the closed <summary> reads as the same family as
+   .condition-member-combobox (bare, in-chip, fixed row height so the chip does not grow when open), an
+   absolutely-positioned checklist floats on open. Same --db-* tokens, no hard-coded colors. */
+/* Same available-width behavior as .condition-member-combobox: the control takes the row's spare width
+   first (so "Consumer electronics" no longer clips at 16ch the instant "is one of" is chosen) and the
+   summary ellipsis-clips ONLY when the chip itself would overflow (chip is bounded by max-width:100%). */
+.condition-chip .condition-member-checkboxes { position: relative; display: inline-flex; flex: 1 1 auto; min-width: 0; }
+.condition-chip .condition-member-checkboxes > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--db-text);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0 2px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  outline: none;
+}
+.condition-chip .condition-member-checkboxes > summary::-webkit-details-marker { display: none; }
+.condition-chip .condition-member-checkboxes > summary::after { content: ' ▾'; color: var(--db-text-secondary); }
+.condition-chip .condition-member-checkboxes > summary:focus-visible {
+  outline: 2px solid var(--db-focus);
+  outline-offset: 2px;
+}
+/* Empty set (no members yet): the "Select…" summary picks up the warn tint, matching the single select. */
+.condition-chip .condition-member-checkboxes.condition-member-select--empty > summary { color: var(--db-warn); }
+.condition-chip .condition-member-checklist {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  min-width: 12ch;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--db-border);
+  border-radius: 8px;
+  background: var(--db-surface);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--db-text) 12%, transparent);
+}
+.condition-chip .condition-member-checklist li { margin: 0; }
+.condition-chip .condition-member-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+  color: var(--db-text);
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.condition-chip .condition-member-checklist label:hover { background: var(--db-surface-alt, var(--db-surface)); }
+
+/* Standalone keyboard Combine affordance (SC-2666): a sibling of .condition-controls on the row's column
+   axis, so it flows onto its own line below the controls. align-self:flex-start sizes it to its content
+   (never stretches the full row width). This is the ACTION — the advisory MESSAGE is the quiet ⚠ icon
+   (hover) plus a toast on edit. Never blocks submit. */
+.condition-warning-action {
+  align-self: flex-start;
+  font-size: 12px; padding: 1px 8px; border-radius: 6px;
+  border: 1px solid var(--db-border); background: var(--db-surface); cursor: pointer;
+}
+
+/* Quiet ⚠ icon — the always-present resting form of a warning, on the controls line (sibling of the chip;
+   outside its width flex so it never clips). Hover/focus shows the full text via the global [data-tooltip];
+   the loud full text appears only as a transient toast when a direct edit triggers it. Keyboard-focusable
+   (carries a visible focus ring), aria-exposed. NEVER blocks submit. Both themes via --db-warn + color-mix. */
+.condition-warning-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--db-warn);
+  cursor: default;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.condition-warning-icon:hover { background: color-mix(in srgb, var(--db-warn) 12%, transparent); }
+.condition-warning-icon:focus-visible { outline: 2px solid var(--db-focus); outline-offset: 2px; }
+/* Open the tooltip bubble LEFTWARD (anchor its right edge to the icon) instead of the global centered
+   layout. The warning icon sits at the right edge of a condition row; a centered bubble grows rightward
+   past .content (overflow:hidden) and under the docked AI Assistant panel (.assistant-dock, z-index:900),
+   which — because Part 1's `container-type:inline-size` on .kpi-conditions-main traps the bubble's
+   z-index:3000 in a lower stacking context — the dock then paints over, hiding the text. Growing left keeps
+   the whole bubble inside the content interior, clear of both the overflow clip and the dock. The arrow
+   (::before) stays centered on the icon. */
+.condition-warning-icon[data-tooltip]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.condition-merge-offer {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--db-text-secondary);
+  padding: 2px 8px;
+}
+.condition-merge-offer button {
+  font-size: 12px; padding: 1px 8px; border-radius: 6px;
+  border: 1px solid var(--db-border); background: var(--db-surface); cursor: pointer;
+}
+
+/* Quiet AND joiner between adjacent rows — a small, muted, non-interactive label that grounds the
+   cross-row AND semantics exactly where combination happens (Gestalt proximity). Both themes. */
+.condition-and-joiner {
+  padding: 1px 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--db-text-secondary);
+  text-transform: uppercase;
+  user-select: none;
+}
+/* One-line OR-vs-AND teaching hint above the rows — appears with the second row, reads as guidance. */
+.condition-and-hint {
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--db-text-secondary);
+}
+
+/* Muted pencil icon-button — the escape hatch to raw text (and back). Subordinate to the chip: no fill, a
+   secondary tint, brightening on hover; its pressed state (in free-text) reads as active. */
+.condition-mdx-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Reserve the icon's footprint on the controls line: the chip may never claim this space by growing,
+     so the pencil stays clickable and the value clips within the chip instead of overlapping it (Part 1b).
+     .form-remove-row-btn already has flex-shrink:0; this gives the pencil the same protection. */
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--db-text-secondary);
+  cursor: pointer;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 6px;
+}
+/* The toggle carries the page's own </> code SVG (matching the detail-header icon set); size it to the
+   chip footprint. viewBox-only SVGs have no intrinsic size, so this width/height is load-bearing. */
+.condition-mdx-toggle svg { width: 14px; height: 14px; }
+.condition-mdx-toggle:hover { color: var(--db-text); background: var(--db-surface-alt, var(--db-surface)); }
+.condition-mdx-toggle[aria-pressed="true"] {
+  color: var(--db-accent);
+  background: color-mix(in srgb, var(--db-accent) 10%, transparent);
+}
+.condition-mdx-toggle:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Conditions layout (I1 / SC-2666, rail removed Task 3) ───── */
+.kpi-conditions-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.kpi-conditions-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; container-type: inline-size; }
+/* When the conditions column is narrow (e.g. the AI Assistant panel is open on a small viewport), a
+   single-line chip can squeeze the value to nothing. Below this inline-size the chip wraps: level +
+   operator stay on line 1, the value control drops to its own full-width line (truncate-then-wrap,
+   spec §1c). Threshold tuned at :3000 with the assistant open — see plan Task 1 Step 8. */
+@container (max-width: 380px) {
+  .condition-chip { flex-wrap: wrap; }
+  .condition-chip .condition-member-combobox,
+  .condition-chip .condition-measure-select,
+  .condition-chip .condition-member-checkboxes {
+    flex-basis: 100%;
+  }
+}
+/* The row a tree pick will land in — always visible so the user sees the target (Norman Gulf of
+   Execution): a left accent bar PLUS a subtle accent tint (spec §142/§174). */
+.condition-row--target { position: relative; }
+.condition-row--target .condition-face {
+  border-color: var(--db-focus);
+  box-shadow: inset 3px 0 0 0 var(--db-accent);   /* left accent bar */
+  background: color-mix(in srgb, var(--db-accent) 6%, var(--db-surface));   /* subtle target tint */
+}
+
+/* ── Dimension rows ───────────────────────────────────────────── */
+.dim-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dim-row-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 28px;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #aaa;
+  padding: 0 0 2px 0;
+}
+
+.dim-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Base object field: select (or free-text "Other") + a hint line. */
+.base-object-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.base-object-other {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.base-object-other .form-input { flex: 1; }
+
+.field-hint {
+  font-size: 11px;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.link-btn {
+  font-size: 11px;
+  color: #0066cc;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.link-btn:hover { text-decoration: underline; }
+
+/* ── Add / Remove row buttons ────────────────────────────────── */
+.form-add-row-btn {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0066cc;
+  background: transparent;
+  border: 1px solid #0066cc;
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.form-add-row-btn:hover { background: #e8f0fb; }
+
+.form-remove-row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+/* Carries the page's own trash SVG (matching the detail-header delete icon); size it to the row footprint.
+   viewBox-only SVGs have no intrinsic size, so this width/height is load-bearing. */
+.form-remove-row-btn svg { width: 14px; height: 14px; }
+
+.form-remove-row-btn:hover { color: #cc3300; background: #fff0f0; }
+.form-remove-row-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Cube row ────────────────────────────────────────────────── */
+.cube-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cube-row .form-input {
+  flex: 1;
+}
+
+.cube-new-btn {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0066cc;
+  background: transparent;
+  border: 1px solid #0066cc;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cube-new-btn:hover { background: #e8f0fb; }
+
+/* ── Form action buttons ─────────────────────────────────────── */
+/* Left-aligned; Save draft + Submit share one outlined style, Cancel stays grey. */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Save draft / Submit — one shared outlined style (blue border, white bg). */
+.form-btn {
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 7px;
+  padding: 7px 18px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.form-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.form-btn--outline { color: #0066cc; background: #ffffff; border-color: #0066cc; }
+.form-btn--outline:hover:not(:disabled) { background: #eef5fd; }
+
+/* Inline spinner shown in an action button while its request is in flight. */
+.btn-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .btn-spinner { animation-duration: 1.5s; }
+}
+
+/* Cancel — quiet and BORDERLESS, matching the Cube edit form's Cancel: an outlined
+   box would give the discard action the same visual weight as the actions it
+   discards. (The border is declared transparent rather than `none` so the button's
+   box keeps the same height as its outlined siblings.) */
+.form-cancel-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 7px 16px;
+  cursor: pointer;
+}
+
+.form-cancel-btn:hover:not(:disabled) { background: #f0f0f0; }
+.form-cancel-btn:disabled { opacity: 0.55; cursor: not-allowed; }

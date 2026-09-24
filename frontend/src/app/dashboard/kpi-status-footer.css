@@ -1,0 +1,48 @@
+/* frontend/src/app/dashboard/kpi-status-footer.css
+   The KPI tile's body-level status footer (Phase 2 redesign). A full-width strip that
+   sits at the bottom of the tile body — status dot + label on the left, issue summary on
+   the right — like a table tile's pager row. Themed through the shared --db-* tokens so it
+   reads in both light and dark. The host is a flex row separated from the chart above it. */
+:host {
+  flex: 0 0 auto;
+  display: flex; align-items: center;
+}
+.ksf {
+  flex: 1 1 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  /* extra right padding clears the tile's ◲ resize handle (absolutely positioned over
+     the bottom-right corner), so the issue summary never sits under it. */
+  padding: 6px 22px 6px 10px;
+  border-top: 1px solid var(--db-border);
+  background: var(--db-bar);
+  font-size: 12px; line-height: 1.2;
+  /* the footer expands the tile on click like the chart body above it (Fix 1) */
+  cursor: zoom-in;
+}
+.ksf__status { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ksf__dot {
+  flex: 0 0 auto;
+  width: 9px; height: 9px; border-radius: 50%;
+  /* a hairline ring so a pale dot stays visible on the bar in either theme */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+.ksf__label {
+  color: var(--db-text); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ksf__issues {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--db-text-secondary); white-space: nowrap;
+  /* the raised branch is a <button>; neutralize UA button chrome so a <span>↔<button>
+     swap (0↔N issues) never shifts the footer row. The --raised rule re-adds the pill. */
+  margin: 0; font: inherit; background: none; border: none; cursor: pointer;
+}
+/* Raised issues stand out: warn tone + a pill so the count reads as a real signal. */
+.ksf__issues--raised {
+  color: var(--db-warn); font-weight: 600;
+  background: var(--db-warn-surface);
+  border: 1px solid var(--db-warn-border); border-radius: 999px;
+  padding: 2px 8px;
+}
+.ksf__warn { font-size: 11px; line-height: 1; }

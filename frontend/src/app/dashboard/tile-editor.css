@@ -1,0 +1,97 @@
+.te-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  animation: te-fade 0.12s ease;
+}
+
+.te-modal {
+  background: var(--db-surface);
+  color: var(--db-text);
+  border: 1px solid var(--db-border);
+  border-radius: 14px;
+  width: 720px;
+  max-width: 92vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  animation: te-pop 0.14s ease;
+  outline: none;
+}
+
+.te-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--db-border);
+  flex: 0 0 auto;
+}
+.te-title { font-size: 16px; font-weight: 600; margin: 0; }
+.te-close {
+  font-size: 20px; line-height: 1; cursor: pointer;
+  border: none; background: transparent; color: var(--db-text-secondary);
+  padding: 2px 8px; border-radius: 6px;
+}
+.te-close:hover { background: var(--db-canvas); color: var(--db-text); }
+
+.te-body {
+  padding: 16px 20px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Add-mode kind picker — two large choices side by side. */
+.te-kind {
+  border: none; margin: 0; padding: 0;
+  display: flex; gap: 12px;
+}
+.te-kind__legend { font-size: 13px; color: var(--db-text-secondary); margin-bottom: 8px; padding: 0; }
+.te-kind__btn {
+  flex: 1 1 0;
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
+  padding: 16px; cursor: pointer; text-align: left;
+  border: 1px solid var(--db-border); border-radius: 10px;
+  background: var(--db-canvas); color: var(--db-text);
+}
+.te-kind__btn:hover { border-color: var(--db-accent, #0066cc); }
+.te-kind__name { font-size: 14px; font-weight: 600; }
+.te-kind__desc { font-size: 12px; color: var(--db-text-secondary); }
+
+.te-field { display: flex; flex-direction: column; gap: 4px; }
+.te-label { font-size: 11px; color: var(--db-text-secondary); }
+.te-input {
+  padding: 6px 8px; font-size: 13px;
+  border: 1px solid var(--db-border); border-radius: 4px;
+  background: var(--db-surface); color: var(--db-text);
+}
+
+.te-actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--db-border);
+  flex: 0 0 auto;
+}
+.te-btn {
+  font-size: 13px; font-weight: 600; border-radius: 8px;
+  padding: 8px 20px; cursor: pointer;
+  border: 1px solid transparent; min-width: 96px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.te-btn--ghost { color: var(--db-text); background: var(--db-surface); border-color: var(--db-border); }
+.te-btn--ghost:hover { background: var(--db-canvas); }
+.te-btn--primary { color: #fff; background: #0066cc; }
+.te-btn--primary:hover { background: #0055aa; }
+.te-btn--primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes te-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes te-pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }

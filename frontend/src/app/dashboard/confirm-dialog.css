@@ -1,0 +1,59 @@
+/* frontend/src/app/dashboard/confirm-dialog.css
+   The delete-confirm modal (redesign R5 / spec §12). Clones the tile-editor's
+   backdrop/modal/actions shape (renamed cd-*) so the two dialogs read as one
+   family, narrower since it only carries a title, a message and two buttons.
+   Themed through the --db-* tokens so it reads correctly in both light and dark. The
+   confirm button is OUTLINED rather than filled — being asked to confirm is a normal step
+   in editing, not an alarm — and a destructive one is outlined in --db-warn (caution), not
+   --db-danger (failure), so it reads as "this cannot be undone" rather than "this broke". */
+.cd-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+  animation: cd-fade 0.12s ease;
+}
+
+.cd-modal {
+  background: var(--db-surface);
+  color: var(--db-text);
+  border: 1px solid var(--db-border);
+  border-radius: 14px;
+  width: 420px;
+  max-width: 92vw;
+  padding: 20px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  animation: cd-pop 0.14s ease;
+  outline: none;
+}
+
+.cd-title { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+.cd-message { font-size: 13px; color: var(--db-text-secondary); margin: 0 0 20px; line-height: 1.4; }
+
+.cd-actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+.cd-btn {
+  font-size: 13px; font-weight: 600; border-radius: 8px;
+  padding: 8px 20px; cursor: pointer;
+  border: 1px solid transparent; min-width: 96px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cd-btn--ghost { color: var(--db-text); background: var(--db-surface); border-color: var(--db-border); }
+.cd-btn--ghost:hover { background: var(--db-canvas); }
+/* Destructive confirm: outlined in the CAUTION colour, not the danger one — a delete the
+   user asked for is irreversible, not an error, and --db-danger is this theme's colour for
+   things that failed. The themed warn surface on hover keeps it correct in dark mode,
+   unlike a hardcoded wash. */
+.cd-btn--danger {
+  color: var(--db-warn);
+  background: var(--db-surface);
+  border-color: var(--db-warn);
+}
+.cd-btn--danger:hover { background: var(--db-warn-surface); }
+
+@keyframes cd-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cd-pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }

@@ -1,0 +1,4 @@
+Before starting, make sure the relevant data is loaded into SCO. Define the business logic for 
+identifying supply chain risks, then use it to configure the supporting analytics cube and 
+issue-generating KPI. Once the KPI is created, go to the dashboard to review KPI values and 
+the related issues identified.

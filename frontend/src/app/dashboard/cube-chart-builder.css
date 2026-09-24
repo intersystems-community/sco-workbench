@@ -1,0 +1,71 @@
+/* frontend/src/app/dashboard/cube-chart-builder.css
+   The cube chart builder's pickers (cube/measure/dimension/split), ported from
+   chart-builder.css, `.cb__*` renamed to `.ccb__*`. The type dropdown + preview + why/note
+   copy live in the shared preview child (chart-builder-preview.css). */
+.ccb { display: flex; flex-direction: column; gap: 12px; }
+/* align-items: flex-start (not flex-end): the fields are unequal in height — Measures/Filters carry a
+   chip row and Measures/Series can grow a wrapped note line — so bottom-aligning them shoved the plain
+   single-select fields (Cube, Category axis, Series) down and floated their labels mid-row. Top-aligning
+   keeps every label on one row with its select beneath it; a taller field grows downward on its own. */
+.ccb__controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+/* The picker wrapper: the section title (.ccb__section-title) IS the label now, so the field
+   carries no repeated label span (SC-2665 label-collapse). */
+.ccb__field { display: flex; flex-direction: column; gap: 4px; }
+/* Section chrome, mirroring KPI's .form-section-title / .section-hint but TOKENIZED (never KPI's #888/#aaa) —
+   the Cube tile renders in both light and dark, so the chrome must ride --db-* to be correct in either theme. */
+.ccb__section { display: flex; flex-direction: column; gap: 4px; }
+.ccb__section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--db-text-secondary); display: flex; align-items: center; gap: 10px;
+}
+.ccb__section-hint {
+  font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px;
+  color: var(--db-text-secondary);
+}
+/* One shared control width/box for every picker + the filter member input (§6.3 crit 1: uniform rows). */
+.ccb__control {
+  font-size: 13px; padding: 4px 8px; min-width: 140px;
+  border: 1px solid var(--db-border); border-radius: 4px;
+  background: var(--db-surface); color: var(--db-text);
+}
+.ccb__empty { font-size: 13px; color: var(--db-text-secondary); margin: 0; }
+.ccb__empty--error { color: var(--db-warn); }
+/* Retry affordance: an outlined, tokenized BUTTON (matches KPI's .retry-btn shape via --db-accent so it
+   reads as an action, not navigation, and renders in both themes) — spec §5-i. */
+.ccb__empty button {
+  margin-left: 6px; padding: 2px 8px; font: inherit; font-size: 12px;
+  color: var(--db-accent); background: transparent;
+  border: 1px solid var(--db-accent); border-radius: 4px; cursor: pointer;
+}
+.ccb__empty button:hover { background: color-mix(in srgb, var(--db-accent) 12%, transparent); }
+
+/* Measures + Filters render as removable chips followed by an "+ add…" select.
+   Colours ride the existing --db-* vars so both light and dark themes render. */
+.ccb__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ccb__chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; padding: 2px 4px 2px 8px; border-radius: 12px;
+  border: 1px solid var(--db-border); background: var(--db-surface-alt, var(--db-surface)); color: var(--db-text);
+}
+.ccb__chip button {
+  border: none; background: transparent; color: var(--db-text-secondary);
+  cursor: pointer; font-size: 12px; line-height: 1; padding: 0 2px;
+}
+.ccb__chip button:hover { color: var(--db-text); }
+.ccb__note { font-size: 11px; color: var(--db-text-secondary); }
+
+/* Add-filter affordance (spec §6.1), tokenized mirror of KPI's .form-add-row-btn — a named button, not a
+   hidden tree gesture; the draft row lays out the level select + member combobox inline. */
+.ccb__add-row-btn {
+  font-size: 11px; font-weight: 600; color: var(--db-accent);
+  background: transparent; border: 1px solid var(--db-accent); border-radius: 5px;
+  padding: 2px 8px; cursor: pointer; align-self: flex-start;
+}
+.ccb__add-row-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--db-accent) 12%, transparent); }
+.ccb__add-row-btn:disabled { opacity: 0.5; cursor: default; }
+.ccb__draft-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+@media (max-width: 640px) {
+  .ccb__controls { flex-direction: column; align-items: stretch; }
+  .ccb__control { min-width: 0; width: 100%; }
+}

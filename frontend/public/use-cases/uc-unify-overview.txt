@@ -1,0 +1,1 @@
+Bring data from multiple sources together, normalize it into a common model, and make it ready for supply chain applications and analytics.

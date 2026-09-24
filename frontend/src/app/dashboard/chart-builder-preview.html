@@ -1,0 +1,84 @@
+<div class="cbp">
+  @if (baseSelection()) {
+    <label class="cbp__field">
+      <span class="cbp__label">Chart type</span>
+      <!-- Selection driven by each option's [selected] (not the select's [value]):
+           a programmatic pre-select in edit mode is order-independent this way. -->
+      <select class="cbp__select" data-testid="type-select"
+              [disabled]="state().useAi"
+              [title]="state().useAi ? 'Turn off Ask AI to pick a chart type yourself' : 'Types this data cannot draw are greyed out, with the reason'"
+              (change)="onTypeOverride($any($event.target).value)">
+        <option value="" [selected]="!state().typeOverride">{{ recommendedLabel() }}</option>
+        @for (t of offeredTypes(); track t) {
+          @if (isTypeApplicable(t)) {
+            <option [value]="t" [selected]="t === state().typeOverride" [title]="typeHelp(t)">{{ typeLabel(t) }}</option>
+          } @else {
+            <option [value]="t" disabled [selected]="t === state().typeOverride" [title]="typeHelp(t)">{{ disabledTypeLabel(t) }}</option>
+          }
+        }
+      </select>
+    </label>
+
+    @if (isFunnel()) {
+      <label class="cbp__field">
+        <span class="cbp__label">Order</span>
+        <select class="cbp__select" data-testid="funnel-order" [value]="funnelSort()" (change)="onFunnelSortChange($any($event.target).value)">
+          <option value="value">By value</option>
+          <option value="source">Source order</option>
+        </select>
+      </label>
+    }
+
+    @if (aiEnabled) {
+      <label class="cbp__field cbp__field--inline">
+        <input type="checkbox" data-testid="ai-toggle"
+               [checked]="state().useAi"
+               (change)="onAiToggle($any($event.target).checked)">
+        <span class="cbp__label">Ask AI</span>
+      </label>
+    }
+
+    <!-- The live preview IS the dashboard tile fed the complete draft (spec §5, one render seam). -->
+    @if (draft(); as sel) {
+      <div class="cbp__preview" data-testid="chart-preview">
+        <app-chart-tile-view [selection]="sel"
+          (applicableTypesChange)="onApplicableTypesChange($event)"
+          (rendered)="onRendered($event)" />
+
+        <!-- All the "about this chart" affordances in ONE bounded region (audit #7): Gestalt common
+             region keeps them a single readable block instead of free-floating stacked paragraphs. -->
+        <div class="cbp__aids" data-testid="chart-aids">
+          @if (treemapKey(); as key) {
+            <ul class="cbp__treemap-key" data-testid="treemap-branch-key" aria-label="Treemap branch colours">
+              @for (item of key; track item.label) {
+                <li class="cbp__treemap-key-item" data-testid="treemap-branch-item">
+                  <span class="cbp__treemap-swatch" data-testid="treemap-branch-swatch"
+                        [style.backgroundColor]="item.color" aria-hidden="true"></span>{{ item.label }}
+                </li>
+              }
+            </ul>
+          }
+          @if (seriesCollapseDim(); as dim) {
+            <p class="cbp__note" data-testid="series-collapsed-note">
+              Splitting by {{ dim }} gives a single series here — this data has only one {{ dim }}
+              value, so there is nothing to break apart. Pick a dimension with two or more values to
+              unlock stacked and nested chart types.
+            </p>
+          }
+          @if (whyLine(); as why) {
+            <p class="cbp__why" data-testid="chart-why">{{ why }}</p>
+          }
+          @if (whyExplanationLine(); as explanation) {
+            <p class="cbp__why-explanation" data-testid="chart-why-explanation">{{ explanation }}</p>
+          }
+          @if (renderedSpec()?.fallback) {
+            <p class="cbp__note" data-testid="fallback-note">
+              The AI suggestion could not be used, so a recommended chart is shown instead.
+              @if (renderedSpec()?.reason; as reason) { <span class="cbp__reason">{{ reason }}</span> }
+            </p>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>
