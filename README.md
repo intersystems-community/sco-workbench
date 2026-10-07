@@ -13,6 +13,10 @@ logic, and visualize data and components built in a dashboard — with an option
 that walks you through each form. Note that not all SCO features are exposed through SCO Workbench —
 refer to the product documentation for the full capabilities of SCO.
 
+**Watch the demo video** — click the image below to play it on YouTube.
+
+[![SCO Workbench demo video — click to play on YouTube](https://img.youtube.com/vi/QTavVUnaVh8/maxresdefault.jpg)](https://www.youtube.com/watch?v=QTavVUnaVh8)
+
 > [!WARNING]
 > **Do not connect SCO Workbench to a production SCO instance.**
 > SCO Workbench generates and deploys code, populates data, and makes other changes to
